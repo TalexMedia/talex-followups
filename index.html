@@ -65,6 +65,9 @@ h2{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:1.4rem;letter-s
 .lead{font-weight:700;font-size:1.05rem}
 .lead a{color:inherit;text-decoration:none;border-bottom:1px dashed var(--border-strong);cursor:pointer}
 .co{color:var(--txt2);font-weight:400}
+.lead .sub{font-size:.8rem;font-weight:400;color:var(--txt3);margin-top:2px;line-height:1.4}
+.lead .sub a,.convhead .det a{color:#0A66C2;text-decoration:none;font-weight:500;white-space:nowrap}
+.convhead .ttl{font-size:.92rem;color:var(--txt);margin-top:6px}
 .chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .chip{font-size:.75rem;font-weight:500;padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--txt2);background:var(--surface2);white-space:nowrap}
 .chip.tom{border-color:var(--o-border);color:var(--o);background:var(--o-dim)}
@@ -255,10 +258,13 @@ function dueChip(c){
 function ownerChip(o){return'<span class="chip '+(o==='Tom'?'tom':o==='Evan'?'evan':'')+'">'+esc(o||'Unassigned')+'</span>'}
 function leadLink(lid,label){return lid?'<a data-lead="'+esc(lid)+'">'+esc(label)+'</a>':esc(label)}
 
+// One line under the lead's name: their LinkedIn headline, and links to LinkedIn and the LeadLinker chat.
+function liLinks(l){return(l.linkedin?' <a href="'+esc(l.linkedin)+'" target="_blank" rel="noopener">LinkedIn ↗</a>':'')+(l.llChat?' <a href="'+esc(l.llChat)+'" target="_blank" rel="noopener">LeadLinker ↗</a>':'')}
+function leadSub(lid){var l=lid&&leads[lid];if(!l||!(l.title||l.linkedin))return'';var t=l.title||'';if(t.length>90)t=t.slice(0,88)+'…';return'<div class="sub">'+esc(t)+liLinks(l)+'</div>'}
 function cardHtml(c){
   var id=esc(c.id),t=today();
   var cls='card'+(c.status!=='done'&&c.due&&c.due<t?' overdue':(c.status!=='done'&&c.due===t?' today':''));
-  var h='<article class="'+cls+'" data-id="'+id+'"><div class="top"><div class="lead">'+leadLink(c.leadId,c.lead)+(c.company?' <span class="co">· '+esc(c.company)+'</span>':'')+'</div><div class="chips">';
+  var h='<article class="'+cls+'" data-id="'+id+'"><div class="top"><div class="lead">'+leadLink(c.leadId,c.lead)+(c.company?' <span class="co">· '+esc(c.company)+'</span>':'')+leadSub(c.leadId)+'</div><div class="chips">';
   h+=ownerChip(c.owner);
   if(c.flag&&c.status==='todo')h+='<span class="chip flag">Needs a rewrite</span>';
   if(hasNewReply(c))h+='<span class="chip newreply">New reply</span>';
@@ -328,7 +334,7 @@ function addFormHtml(lid){
 function leadView(lid){
   var l=leads[lid]||{name:lid};var hs=hist(lid);
   var h='<div class="actions" style="padding:12px 0 0"><button class="btn" data-a="back">← All leads</button></div>';
-  h+='<div class="convhead"><div class="nm">'+esc(l.name)+'</div><div class="det">'+[l.company,l.email,l.linkedin?'<a href="'+esc(l.linkedin)+'" target="_blank" rel="noopener">LinkedIn ↗</a>':''].filter(Boolean).map(function(x,i){return i===2?x:esc(x)}).join(' · ')+'</div></div>';
+  h+='<div class="convhead"><div class="nm">'+esc(l.name)+'</div>'+(l.title?'<div class="ttl">'+esc(l.title)+'</div>':'')+'<div class="det">'+[l.company,l.location,l.email].filter(Boolean).map(esc).join(' · ')+liLinks(l)+(l.llLabel?' <span class="chip">'+esc(l.llLabel)+'</span>':'')+'</div></div>';
   var open=list().filter(function(c){return c.leadId===lid&&c.status!=='done'});
   if(open.length){h+='<h2>Open now</h2>'+open.map(cardHtml).join('')}
   h+='<h2>Conversation</h2>';
