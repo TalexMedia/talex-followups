@@ -264,8 +264,8 @@ function cardHtml(c){
     h+='<label>Message</label><textarea data-f="body">'+esc(e.body)+'</textarea><label>Note</label><input data-f="note" value="'+esc(e.note)+'"></div>';
     h+='<div class="actions"><button class="btn primary" data-a="save">Save</button><button class="btn" data-a="cancel">Cancel</button></div>';
   }else if(flagging[c.id]!=null){
-    h+='<div class="edit"><label>What changed? (for example: a new email came in, they already booked, wrong person)</label><textarea data-x="why" style="min-height:90px">'+esc(flagging[c.id])+'</textarea></div>';
-    h+='<div class="actions"><button class="btn primary" data-a="flagrewrite">Rewrite it</button><button class="btn" data-a="flagclose">Not needed, close it</button><button class="btn" data-a="flagcancel">Cancel</button></div>';
+    h+='<div class="edit"><label>What changed?</label><div class="cf" style="padding:0 0 6px">'+['A new email came in','Needs an update','They replied on LinkedIn','Timing is wrong'].map(function(r){return'<button class="who" data-why="'+esc(r)+'">'+esc(r)+'</button>'}).join('')+'</div><textarea data-x="why" style="min-height:90px">'+esc(flagging[c.id])+'</textarea></div>';
+    h+='<div class="actions"><button class="btn primary" data-a="flagrewrite">Rewrite it</button><button class="btn" data-a="flagcancel">Cancel</button></div>';
   }else if(c.status==='todo'){
     var meta='';
     if(c.to)meta+='<div><b>To</b><span>'+esc(c.to)+'</span></div>';
@@ -277,7 +277,7 @@ function cardHtml(c){
     h+='<div class="actions">';
     if(c.body)h+='<button class="btn primary" data-a="copybody">Copy message</button>';
     if(c.subject)h+='<button class="btn" data-a="copysubj">Copy subject</button>';
-    h+='<button class="btn go" data-a="sent">Mark sent</button><button class="btn" data-a="edit">Edit</button><button class="btn" data-a="flag">Needs changing</button>';
+    h+='<button class="btn go" data-a="sent">Mark sent</button><button class="btn" data-a="edit">Edit</button><button class="btn" data-a="flag">Needs changing</button><button class="btn" data-a="dismiss">Not needed</button>';
     if(c.leadId)h+='<button class="btn link" data-lead="'+esc(c.leadId)+'">History</button>';
     h+='</div>';
   }else{
@@ -458,6 +458,7 @@ app.addEventListener('click',function(ev){
   if(b.dataset.cf){convFilter=b.dataset.cf;return render()}
   if(b.dataset.owner){owner=b.dataset.owner;store('fu-owner',owner);return render()}
   if(b.dataset.da){var dart=b.closest('.doc');return docAct(dart.dataset.doc,b.dataset.da,dart)}
+  if(b.dataset.why){var tw=b.closest('.card').querySelector('[data-x="why"]');tw.value=(tw.value.trim()?tw.value.trim()+'. ':'')+b.dataset.why+': ';tw.focus();tw.setSelectionRange(tw.value.length,tw.value.length);return}
   var a=b.dataset.a;if(!a)return;
   if(a==='new'&&view==='docs'){
     var did='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
