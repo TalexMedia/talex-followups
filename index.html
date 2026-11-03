@@ -46,7 +46,10 @@ h1 span{color:var(--o)}
 .tab[aria-pressed=true]{background:var(--c);border-color:var(--c);color:#fff}
 .tab[aria-pressed=true] .ic{background:rgba(255,255,255,.18);color:#fff}
 .tab[aria-pressed=true] .n{color:rgba(255,255,255,.88)}
-.tab.todo{--c:var(--o);--cb:var(--o-dim)}.tab.waiting{--c:var(--amber);--cb:var(--amber-bg)}.tab.docs{--c:var(--blue);--cb:var(--blue-bg)}.tab.archive{--c:var(--green);--cb:var(--green-bg)}.tab.leads{--c:#2B2B2B;--cb:var(--surface2)}.tab.tasks{--c:#6B4FA0;--cb:#F3EFF9}
+.tab.todo{--c:var(--o);--cb:var(--o-dim)}.tab.waiting{--c:var(--amber);--cb:var(--amber-bg)}.tab.docs{--c:var(--blue);--cb:var(--blue-bg)}.tab.archive{--c:var(--green);--cb:var(--green-bg)}.tab.leads{--c:#2B2B2B;--cb:var(--surface2)}.tab.tasks{--c:#6B4FA0;--cb:#F3EFF9}.tab.suggested{--c:#0F7A78;--cb:#E8F5F4}
+.sugg .from{font-size:.8rem;color:var(--txt3);padding:0 16px 6px}
+.sugg .kind{border-color:#9FD3CF;color:#0F7A78;background:#E8F5F4}
+.sugg .was{margin:6px 16px;padding:10px 14px;border:1px dashed var(--border-strong);border-radius:8px;color:var(--txt3);font-size:.88rem;white-space:pre-wrap}
 .task .ttl{font-weight:700;font-size:1rem}
 .task.isdone .ttl{text-decoration:line-through;color:var(--txt3)}
 .donelist summary{cursor:pointer;color:var(--txt2);font-size:.9rem;padding:8px 0}
@@ -154,10 +157,10 @@ var DB='https://talex-media-default-rtdb.firebaseio.com/drafts/';
 var KEY=(location.hash.match(/k=([a-z0-9-]{6,80})/)||[])[1]||'';
 var app=document.getElementById('app');
 var meSel=document.getElementById('me');
-var TABS={todo:'To send',waiting:'Waiting on reply',tasks:'Tasks',docs:'Docs to review',archive:'Archive',leads:'Leads'};
+var TABS={suggested:'Suggested',todo:'To send',waiting:'Waiting on reply',tasks:'Tasks',docs:'Docs to review',archive:'Archive',leads:'Leads'};
 var SV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">';
-var TABICON={tasks:SV+'<rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg>',todo:SV+'<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>',waiting:SV+'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',docs:SV+'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>',archive:SV+'<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/></svg>',leads:SV+'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 20a6.5 6.5 0 0 0-3-5.5"/></svg>'};
-var cards={},leads={},docs={},tasks={},editingTask={},editingDoc={},view='todo',owner='All',openLead=null,convFilter='All',leadQuery='',editing={},conflicts={},flagging={},adding=null,loadedOnce=false;
+var TABICON={suggested:SV+'<path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3"/></svg>',tasks:SV+'<rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg>',todo:SV+'<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>',waiting:SV+'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',docs:SV+'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>',archive:SV+'<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/></svg>',leads:SV+'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 20a6.5 6.5 0 0 0-3-5.5"/></svg>'};
+var cards={},leads={},docs={},tasks={},suggestions={},editingTask={},editingDoc={},view='todo',owner='All',openLead=null,convFilter='All',leadQuery='',editing={},conflicts={},flagging={},adding=null,loadedOnce=false;
 
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 meSel.value=store('fu-me')||'';
@@ -186,7 +189,7 @@ function busy(){return Object.keys(editing).length||Object.keys(editingDoc).leng
 
 function load(quiet){
   return fetch(ROOT+'.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(v){
-    v=v||{};cards=v.cards||{};leads=v.leads||{};docs=v.docs||{};tasks=v.tasks||{};loadedOnce=true;render();
+    v=v||{};cards=v.cards||{};leads=v.leads||{};docs=v.docs||{};tasks=v.tasks||{};suggestions=v.suggestions||{};loadedOnce=true;render();
     if(!quiet)setStatus('Up to date '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}));
   }).catch(function(e){setStatus('Could not load the board ('+e.message+'). Check your connection and refresh.',true);if(!loadedOnce)render()});
 }
@@ -206,7 +209,7 @@ function saveItem(coll,id,mutate,tries){
     next.rev=((x.cur&&x.cur.rev)||0)+1;next.updatedAt=Date.now();
     return fetch(url,{method:'PUT',cache:'no-store',headers:{'if-match':x.etag,'Content-Type':'application/json'},body:JSON.stringify(next)}).then(function(r){
       if(r.status===412&&tries<2)return saveItem(coll,id,mutate,tries+1);
-      if(!r.ok)throw new Error('HTTP '+r.status);({docs:docs,tasks:tasks,cards:cards})[coll][id]=next;return next;
+      if(!r.ok)throw new Error('HTTP '+r.status);({docs:docs,tasks:tasks,cards:cards,suggestions:suggestions})[coll][id]=next;return next;
     });
   });
 }
@@ -298,7 +301,7 @@ function cardHtml(c){
     h+='<div class="actions">';
     if(c.body)h+='<button class="btn primary" data-a="copybody">Copy message</button>';
     if(c.subject)h+='<button class="btn" data-a="copysubj">Copy subject</button>';
-    h+='<button class="btn go" data-a="sent">Mark sent</button><button class="btn" data-a="edit">Edit</button><button class="btn" data-a="flag">Needs changing</button><button class="btn" data-a="dismiss">Not needed</button>';
+    h+='<button class="btn go" data-a="sent">Email sent</button><button class="btn" data-a="edit">Edit</button><button class="btn" data-a="flag">Needs changing</button><button class="btn" data-a="dismiss">Not needed</button>';
     if(c.leadId)h+='<button class="btn link" data-lead="'+esc(c.leadId)+'">History</button>';
     h+='</div>';
   }else{
@@ -500,16 +503,59 @@ function taskAct(id,a,art){
   }).then(function(r){setStatus(r===false?'That task was deleted.':a==='done'?'Done. It is under Done at the bottom.':'Reopened.',r===false);render()}).catch(function(err){setStatus('Not saved ('+err.message+'). Try again.',true)});
 }
 
+// Suggestions come from the Granola check (10am, 1pm, 5pm, 8pm). Nothing reaches the
+// board until Tom or Evan taps Add; Dismiss keeps the suggestion on file.
+function suggList(){return Object.keys(suggestions).map(function(k){return suggestions[k]}).filter(Boolean)}
+function suggHtml(x){
+  var kind={card:'New email',task:'New task',cardUpdate:'Change a card'}[x.kind]||x.kind;
+  var h='<article class="card sugg" data-sugg="'+esc(x.id)+'"><div class="top"><div class="lead">'+esc(x.title||'')+'</div><div class="chips"><span class="chip kind">'+esc(kind)+'</span>';
+  var o=(x.card&&x.card.owner)||(x.task&&x.task.owner)||(x.update&&x.update.owner);if(o)h+=ownerChip(o);
+  h+='</div></div>';
+  if(x.meeting)h+='<div class="from">From: '+esc(x.meeting.title||'')+(x.meeting.date?', '+esc(fmtDay(x.meeting.date)):'')+'</div>';
+  if(x.why)h+='<div class="note">'+linkify(x.why)+'</div>';
+  var c=x.card,t=x.task,u=x.update;
+  if(c){var meta='';if(c.to)meta+='<div><b>To</b><span>'+esc(c.to)+'</span></div>';if(c.cc)meta+='<div><b>Cc</b><span>'+esc(c.cc)+'</span></div>';if(c.subject)meta+='<div><b>Subject</b><span>'+esc(c.subject)+'</span></div>';if(meta)h+='<div class="meta">'+meta+'</div>';h+=c.body?'<div class="msg">'+linkify(c.body)+'</div>':'<div class="nomsg">Draft to follow.</div>'}
+  if(t)h+='<div class="msg">'+esc(t.title)+(t.due?'\nDue '+esc(fmtDay(t.due)):'')+(t.notes?'\n\n'+linkify(t.notes):'')+'</div>';
+  if(u){var cur=cards[u.cardId];h+='<div class="from">Changes the card for '+esc(cur?cur.lead:u.cardId)+'</div>';if(cur&&cur.body&&u.fields&&u.fields.body)h+='<div class="was">Now: '+esc(cur.body)+'</div>';if(u.fields&&u.fields.body)h+='<div class="msg">'+linkify(u.fields.body)+'</div>';if(u.fields&&u.fields.note)h+='<div class="note">'+linkify(u.fields.note)+'</div>'}
+  if(x.status==='pending')h+='<div class="actions"><button class="btn go" data-sa="add">Add</button><button class="btn" data-sa="dismiss">Dismiss</button></div>';
+  else h+='<div class="log">'+(x.status==='added'?'Added':'Dismissed')+' by '+esc(x.by||'')+', '+esc(fmtWhen(x.decidedAt))+'</div>';
+  return h+'</article>';
+}
+function suggestedView(){
+  var all=suggList().sort(function(a,b){return(b.createdAt||0)-(a.createdAt||0)});
+  var p=all.filter(function(x){return x.status==='pending'}),d=all.filter(function(x){return x.status!=='pending'});
+  var h='<div class="note" style="padding:12px 0 0">Suggestions from our calls. Add puts it on the board; Dismiss keeps it on file here.</div>';
+  h+=p.length?p.map(suggHtml).join(''):'<div class="empty">Nothing waiting.</div>';
+  if(d.length)h+='<details class="donelist"><summary>Decided ('+d.length+')</summary>'+d.slice(0,30).map(suggHtml).join('')+'</details>';
+  return h;
+}
+function suggAct(id,a){
+  var x=suggestions[id];if(!x||x.status!=='pending')return;
+  if(!meSel.value&&!confirm('Pick who you are at the top first, so we can see who did what. Continue anyway?'))return;
+  setStatus('Saving…');
+  var step=Promise.resolve();
+  if(a==='add'){
+    if(x.lead&&x.lead.id&&!leads[x.lead.id])step=step.then(function(){var l=JSON.parse(JSON.stringify(x.lead));var lid=l.id;delete l.id;l.history=l.history||{};return put('/leads/'+lid,l).then(function(){leads[lid]=l})});
+    if(x.kind==='card')step=step.then(function(){return saveItem('cards',x.card.id,function(cur){if(cur)throw new Error('that card already exists');var c=JSON.parse(JSON.stringify(x.card));c.status='todo';c.channel='Email';c.log=[];addLog(c,'added this card from a suggestion');return c})});
+    if(x.kind==='task')step=step.then(function(){return saveItem('tasks',x.task.id,function(cur){if(cur)throw new Error('that task already exists');var t=JSON.parse(JSON.stringify(x.task));t.status='open';t.log=[];addLog(t,'added this task from a suggestion');return t})});
+    if(x.kind==='cardUpdate')step=step.then(function(){return saveItem('cards',x.update.cardId,function(cur){if(!cur)throw new Error('that card is gone');Object.keys(x.update.fields||{}).forEach(function(f){cur[f]=x.update.fields[f]});if(cur.status==='done')cur.status='todo';cur.flag=null;addLog(cur,'changed it from a suggestion');return cur})});
+  }
+  step.then(function(){return saveItem('suggestions',id,function(cur){if(!cur)return false;cur.status=a==='add'?'added':'dismissed';cur.by=who();cur.decidedAt=Date.now();return cur})})
+    .then(function(){setStatus(a==='add'?'Added to the board.':'Dismissed. It stays on file under Decided.');render()})
+    .catch(function(e){setStatus('Not saved ('+e.message+').',true)});
+}
+
 function render(){
   var active=document.activeElement;
   if(active&&active.closest&&active.closest('.edit'))return; // never redraw under someone who is typing
-  var all=list(),counts={todo:0,waiting:0,docs:0,tasks:0};
+  var all=list(),counts={todo:0,waiting:0,docs:0,tasks:0,suggested:0};
+  suggList().forEach(function(x){if(x.status==='pending')counts.suggested++});
   taskList().forEach(function(t){if(t.status!=='done'&&(owner==='All'||t.owner===owner))counts.tasks++});
   all.forEach(function(c){if((owner==='All'||c.owner===owner)&&counts[c.status]!=null)counts[c.status]++});
   docList().forEach(function(d){if(d.status!=='shared'&&(owner==='All'||d.owner===owner))counts.docs++});
   counts.leads=Object.keys(leads).length;
   var h='<div class="bar"><div class="tabs" id="tabs">';
-  ['todo','waiting','tasks','docs','archive','leads'].forEach(function(s){h+='<button class="tab '+s+'" data-view="'+s+'" aria-pressed="'+(view===s)+'"><span class="ic">'+TABICON[s]+'</span><span class="t">'+TABS[s]+(counts[s]!=null?'<span class="n">'+counts[s]+'</span>':'')+'</span></button>'});
+  ['suggested','todo','waiting','tasks','docs','archive','leads'].forEach(function(s){if(s==='suggested'&&!counts.suggested&&view!=='suggested')return;h+='<button class="tab '+s+'" data-view="'+s+'" aria-pressed="'+(view===s)+'"><span class="ic">'+TABICON[s]+'</span><span class="t">'+TABS[s]+(counts[s]!=null?'<span class="n">'+counts[s]+'</span>':'')+'</span></button>'});
   h+='</div><div class="subbar"><span class="spacer"></span>';
   if(view!=='leads')['All','Tom','Evan'].forEach(function(o){h+='<button class="who" data-owner="'+o+'" aria-pressed="'+(owner===o)+'">'+o+'</button>'});
   h+='<button class="add" data-a="new">+ Add</button></div></div><div id="status"></div>';
@@ -517,6 +563,7 @@ function render(){
   else if(view==='archive')h+=archiveView();
   else if(view==='docs')h+=docsView();
   else if(view==='tasks')h+=tasksView();
+  else if(view==='suggested')h+=suggestedView();
   else{
     var shown=all.filter(function(c){return c.status===view&&(owner==='All'||c.owner===owner)});
     shown.sort(function(a,b){return(a.due||'9999').localeCompare(b.due||'9999')||String(a.lead).localeCompare(String(b.lead))});
@@ -544,6 +591,7 @@ app.addEventListener('click',function(ev){
   if(b.dataset.owner){owner=b.dataset.owner;store('fu-owner',owner);return render()}
   if(b.dataset.da){var dart=b.closest('.doc');return docAct(dart.dataset.doc,b.dataset.da,dart)}
   if(b.dataset.ta){var tart=b.closest('.task');return taskAct(tart.dataset.task,b.dataset.ta,tart)}
+  if(b.dataset.sa){return suggAct(b.closest('.sugg').dataset.sugg,b.dataset.sa)}
   if(b.dataset.why){var tw=b.closest('.card').querySelector('[data-x="why"]');tw.value=(tw.value.trim()?tw.value.trim()+'. ':'')+b.dataset.why+': ';tw.focus();tw.setSelectionRange(tw.value.length,tw.value.length);return}
   var a=b.dataset.a;if(!a)return;
   if(a==='new'&&view==='tasks'){
