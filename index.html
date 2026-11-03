@@ -108,6 +108,12 @@ h2{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:1.4rem;letter-s
 .ev .h b{color:var(--txt)}
 .ev .s{font-weight:500;font-size:.9rem;margin-top:4px}
 .ev .t{white-space:pre-wrap;word-break:break-word;font-size:.92rem;margin-top:4px}
+.ch{font-size:.72rem;font-weight:700;border-radius:999px;padding:0 7px;border:1px solid var(--border)}
+.ch.Email{color:var(--blue);border-color:var(--blue-border);background:#fff}
+.ch.LinkedIn{color:#fff;background:#0A66C2;border-color:#0A66C2}
+.ch.Call{color:var(--green);border-color:var(--green-border);background:#fff}
+.chip.newreply{border-color:#0A66C2;color:#fff;background:#0A66C2}
+.cf{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
 .ev .sum{font-size:.72rem;color:var(--txt3);border:1px solid var(--border);border-radius:999px;padding:0 6px}
 @media (max-width:560px){h1{font-size:2rem}.edit .row{grid-template-columns:1fr}.meta b{width:52px}}
 </style>
@@ -131,7 +137,7 @@ var KEY=(location.hash.match(/k=([a-z0-9-]{6,80})/)||[])[1]||'';
 var app=document.getElementById('app');
 var meSel=document.getElementById('me');
 var TABS={todo:'To send',waiting:'Waiting on reply',archive:'Archive',leads:'Leads'};
-var cards={},leads={},view='todo',owner='All',openLead=null,leadQuery='',editing={},conflicts={},adding=null,loadedOnce=false;
+var cards={},leads={},view='todo',owner='All',openLead=null,convFilter='All',leadQuery='',editing={},conflicts={},adding=null,loadedOnce=false;
 
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 meSel.value=store('fu-me')||'';
@@ -153,6 +159,8 @@ function slug(s){return String(s||'').toLowerCase().normalize('NFKD').replace(/[
 function setStatus(t,err){var s=document.getElementById('status');if(s){s.textContent=t||'';s.className=err?'err':''}}
 function list(){return Object.keys(cards).map(function(k){return cards[k]}).filter(Boolean)}
 function hist(lid){var h=(leads[lid]&&leads[lid].history)||{};return Object.keys(h).map(function(k){var e=h[k];e._id=k;return e}).filter(Boolean).sort(function(a,b){return(a.date||'').localeCompare(b.date||'')||(a.at||0)-(b.at||0)})}
+function hasNewReply(c){var l=c.leadId&&leads[c.leadId];return!!(l&&l.lastInboundAt&&c.status!=='done'&&c.sentAt&&l.lastInboundAt>c.sentAt)}
+function chanOf(e){return e.dir==='call'||e.channel==='Call'?'Call':e.channel==='LinkedIn'?'LinkedIn':e.channel==='Email'?'Email':'Other'}
 function leadName(lid){return(leads[lid]&&leads[lid].name)||lid}
 function busy(){return Object.keys(editing).length||adding}
 
@@ -234,6 +242,7 @@ function cardHtml(c){
   var cls='card'+(c.status!=='done'&&c.due&&c.due<t?' overdue':(c.status!=='done'&&c.due===t?' today':''));
   var h='<article class="'+cls+'" data-id="'+id+'"><div class="top"><div class="lead">'+leadLink(c.leadId,c.lead)+(c.company?' <span class="co">· '+esc(c.company)+'</span>':'')+'</div><div class="chips">';
   h+=ownerChip(c.owner);
+  if(hasNewReply(c))h+='<span class="chip newreply">New reply</span>';
   if(c.channel)h+='<span class="chip">'+esc(c.channel)+'</span>';
   if(c.sentAt&&c.status!=='todo')h+='<span class="chip sent">Sent '+esc(fmtWhen(c.sentAt))+'</span>';
   h+=dueChip(c)+'</div></div>';
@@ -279,7 +288,7 @@ function cardHtml(c){
 
 function evHtml(e){
   var kind={out:'Sent',in:'Received',call:'Call',note:'Note'}[e.dir]||'Note';
-  var h='<div class="ev '+esc(e.dir)+'"><div class="box"><div class="h"><b>'+esc(fmtDay(e.date))+'</b><span>'+esc(kind)+(e.channel&&e.channel!=='Call'?' · '+esc(e.channel):'')+(e.by?' · '+esc(e.by):'')+'</span>'+(e.exact===false?'<span class="sum">summary</span>':'')+'</div>';
+  var h='<div class="ev '+esc(e.dir)+'"><div class="box"><div class="h"><b>'+esc(fmtDay(e.date))+'</b><span class="ch '+chanOf(e)+'">'+esc(chanOf(e)==='Other'?(e.channel||'Note'):chanOf(e))+'</span><span>'+esc(kind)+(e.by?' · '+esc(e.by):'')+(e.account&&e.account!==e.by?' (on '+esc(e.account)+'’s account)':'')+'</span>'+(e.exact===false?'<span class="sum">summary</span>':'')+'</div>';
   if(e.subject)h+='<div class="s">'+esc(e.subject)+'</div>';
   if(e.text)h+='<div class="t">'+linkify(e.text)+'</div>';
   return h+'</div></div>';
@@ -300,6 +309,9 @@ function leadView(lid){
   var open=list().filter(function(c){return c.leadId===lid&&c.status!=='done'});
   if(open.length){h+='<h2>Open now</h2>'+open.map(cardHtml).join('')}
   h+='<h2>Conversation</h2>';
+  var cnt={All:hs.length,Email:0,LinkedIn:0,Call:0};hs.forEach(function(e){var k=chanOf(e);if(cnt[k]!=null)cnt[k]++});
+  h+='<div class="cf">'+[['All','All'],['Email','Email'],['LinkedIn','LinkedIn'],['Call','Calls']].map(function(o){return'<button class="who" data-cf="'+o[0]+'" aria-pressed="'+(convFilter===o[0])+'">'+o[1]+' '+cnt[o[0]]+'</button>'}).join('')+'</div>';
+  if(convFilter!=='All')hs=hs.filter(function(e){return chanOf(e)===convFilter});
   h+=adding&&adding.lid===lid?addFormHtml(lid):'<div class="actions" style="padding:4px 0 8px"><button class="btn primary" data-a="newev" data-l="'+esc(lid)+'">+ Add a reply, call or note</button></div>';
   h+=hs.length?'<div class="conv">'+hs.slice().reverse().map(evHtml).join('')+'</div>':'<div class="empty">No history yet.</div>';
   return h;
@@ -323,7 +335,7 @@ function leadsView(){
   ids.sort(function(a,b){return last(b).localeCompare(last(a))});
   var h='<input class="search" id="lq" placeholder="Search leads" value="'+esc(leadQuery)+'">';
   h+=ids.length?ids.map(function(lid){var l=leads[lid];var open=list().filter(function(c){return c.leadId===lid&&c.status!=='done'});var st=open.length?TABS[open[0].status]:'';
-    return'<button class="lrow" data-lead="'+esc(lid)+'"><span><b>'+esc(l.name)+'</b><small>'+esc(l.company||'')+(last(lid)?' · last activity '+esc(fmtDay(last(lid))):'')+'</small></span>'+(st?'<span class="chip">'+esc(st)+'</span>':'')+'</button>'}).join(''):'<div class="empty">No leads match.</div>';
+    return'<button class="lrow" data-lead="'+esc(lid)+'"><span><b>'+esc(l.name)+'</b><small>'+esc(l.company||'')+(last(lid)?' · last activity '+esc(fmtDay(last(lid))):'')+'</small></span>'+(open.some(hasNewReply)?'<span class="chip newreply">New reply</span>':(st?'<span class="chip">'+esc(st)+'</span>':''))+'</button>'}).join(''):'<div class="empty">No leads match.</div>';
   return h;
 }
 
@@ -356,9 +368,10 @@ function blur(){if(document.activeElement)document.activeElement.blur()}
 app.addEventListener('input',function(ev){if(ev.target.id==='lq'){leadQuery=ev.target.value;render()}});
 app.addEventListener('click',function(ev){
   var lk=ev.target.closest('[data-lead]');
-  if(lk&&!ev.target.closest('.edit')){view='leads';openLead=lk.dataset.lead;adding=null;store('fu-view',view);window.scrollTo(0,0);return render()}
+  if(lk&&!ev.target.closest('.edit')){view='leads';openLead=lk.dataset.lead;adding=null;convFilter='All';store('fu-view',view);window.scrollTo(0,0);return render()}
   var b=ev.target.closest('button');if(!b)return;
   if(b.dataset.view){view=b.dataset.view;openLead=null;adding=null;store('fu-view',view);return render()}
+  if(b.dataset.cf){convFilter=b.dataset.cf;return render()}
   if(b.dataset.owner){owner=b.dataset.owner;store('fu-owner',owner);return render()}
   var a=b.dataset.a;if(!a)return;
   if(a==='back'){openLead=null;adding=null;return render()}
