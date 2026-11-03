@@ -113,6 +113,8 @@ h2{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:1.4rem;letter-s
 .ch.LinkedIn{color:#fff;background:#0A66C2;border-color:#0A66C2}
 .ch.Call{color:var(--green);border-color:var(--green-border);background:#fff}
 .chip.newreply{border-color:#0A66C2;color:#fff;background:#0A66C2}
+.chip.flag{border-color:var(--red-border);color:var(--red);background:var(--red-bg)}
+.flagwhy{margin:0 16px 10px;padding:8px 12px;border-left:3px solid var(--red);background:var(--red-bg);font-size:.9rem}
 .cf{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
 .ev .sum{font-size:.72rem;color:var(--txt3);border:1px solid var(--border);border-radius:999px;padding:0 6px}
 @media (max-width:560px){h1{font-size:2rem}.edit .row{grid-template-columns:1fr}.meta b{width:52px}}
@@ -137,7 +139,7 @@ var KEY=(location.hash.match(/k=([a-z0-9-]{6,80})/)||[])[1]||'';
 var app=document.getElementById('app');
 var meSel=document.getElementById('me');
 var TABS={todo:'To send',waiting:'Waiting on reply',docs:'Docs to review',archive:'Archive',leads:'Leads'};
-var cards={},leads={},docs={},editingDoc={},view='todo',owner='All',openLead=null,convFilter='All',leadQuery='',editing={},conflicts={},adding=null,loadedOnce=false;
+var cards={},leads={},docs={},editingDoc={},view='todo',owner='All',openLead=null,convFilter='All',leadQuery='',editing={},conflicts={},flagging={},adding=null,loadedOnce=false;
 
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 meSel.value=store('fu-me')||'';
@@ -162,7 +164,7 @@ function hist(lid){var h=(leads[lid]&&leads[lid].history)||{};return Object.keys
 function hasNewReply(c){var l=c.leadId&&leads[c.leadId];return!!(l&&l.lastInboundAt&&c.status!=='done'&&c.sentAt&&l.lastInboundAt>c.sentAt)}
 function chanOf(e){return e.dir==='call'||e.channel==='Call'?'Call':e.channel==='LinkedIn'?'LinkedIn':e.channel==='Email'?'Email':'Other'}
 function leadName(lid){return(leads[lid]&&leads[lid].name)||lid}
-function busy(){return Object.keys(editing).length||Object.keys(editingDoc).length||adding}
+function busy(){return Object.keys(editing).length||Object.keys(editingDoc).length||Object.keys(flagging).length||adding}
 
 function load(quiet){
   return fetch(ROOT+'.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(v){
@@ -206,7 +208,7 @@ function act(id,kind){
   var before=cards[id];setStatus('Saving…');
   saveCard(id,function(c){
     if(!c)return false;
-    if(kind==='sent'){c.status='waiting';c.sentAt=Date.now();c.sentBy=who()}
+    if(kind==='sent'){c.status='waiting';c.sentAt=Date.now();c.sentBy=who();c.flag=null}
     if(kind==='reply'||kind==='dismiss'||kind==='close')c.status='done';
     if(kind==='again'){c.status='todo';c.body='';c.due=today()}
     if(kind==='reopen')c.status='todo';
@@ -243,10 +245,12 @@ function cardHtml(c){
   var cls='card'+(c.status!=='done'&&c.due&&c.due<t?' overdue':(c.status!=='done'&&c.due===t?' today':''));
   var h='<article class="'+cls+'" data-id="'+id+'"><div class="top"><div class="lead">'+leadLink(c.leadId,c.lead)+(c.company?' <span class="co">· '+esc(c.company)+'</span>':'')+'</div><div class="chips">';
   h+=ownerChip(c.owner);
+  if(c.flag&&c.status==='todo')h+='<span class="chip flag">Needs a rewrite</span>';
   if(hasNewReply(c))h+='<span class="chip newreply">New reply</span>';
   if(c.channel)h+='<span class="chip">'+esc(c.channel)+'</span>';
   if(c.sentAt&&c.status!=='todo')h+='<span class="chip sent">Sent '+esc(fmtWhen(c.sentAt))+'</span>';
   h+=dueChip(c)+'</div></div>';
+  if(c.flag&&c.status==='todo')h+='<div class="flagwhy"><b>'+esc(c.flag.by)+':</b> '+linkify(c.flag.why)+'</div>';
   if(c.note)h+='<div class="note">'+linkify(c.note)+'</div>';
   if(conflicts[c.id])h+='<div class="conflict">Someone else saved this card while you were editing. <button class="btn" data-a="keepmine">Keep mine</button> <button class="btn" data-a="usesaved">Use saved version</button></div>';
   if(editing[c.id]){
@@ -259,6 +263,9 @@ function cardHtml(c){
     h+='<div class="row"><div><label>Cc</label><input data-f="cc" value="'+esc(e.cc)+'"></div><div><label>Subject</label><input data-f="subject" value="'+esc(e.subject)+'"></div></div>';
     h+='<label>Message</label><textarea data-f="body">'+esc(e.body)+'</textarea><label>Note</label><input data-f="note" value="'+esc(e.note)+'"></div>';
     h+='<div class="actions"><button class="btn primary" data-a="save">Save</button><button class="btn" data-a="cancel">Cancel</button></div>';
+  }else if(flagging[c.id]!=null){
+    h+='<div class="edit"><label>What changed? (for example: a new email came in, they already booked, wrong person)</label><textarea data-x="why" style="min-height:90px">'+esc(flagging[c.id])+'</textarea></div>';
+    h+='<div class="actions"><button class="btn primary" data-a="flagrewrite">Rewrite it</button><button class="btn" data-a="flagclose">Not needed, close it</button><button class="btn" data-a="flagcancel">Cancel</button></div>';
   }else if(c.status==='todo'){
     var meta='';
     if(c.to)meta+='<div><b>To</b><span>'+esc(c.to)+'</span></div>';
@@ -270,13 +277,13 @@ function cardHtml(c){
     h+='<div class="actions">';
     if(c.body)h+='<button class="btn primary" data-a="copybody">Copy message</button>';
     if(c.subject)h+='<button class="btn" data-a="copysubj">Copy subject</button>';
-    h+='<button class="btn go" data-a="sent">Mark sent</button><button class="btn" data-a="edit">Edit</button><button class="btn" data-a="dismiss">Not needed</button>';
+    h+='<button class="btn go" data-a="sent">Mark sent</button><button class="btn" data-a="edit">Edit</button><button class="btn" data-a="flag">Needs changing</button>';
     if(c.leadId)h+='<button class="btn link" data-lead="'+esc(c.leadId)+'">History</button>';
     h+='</div>';
   }else{
     if(c.links&&c.links.length)h+='<div class="links">'+c.links.map(function(l){return'<a href="'+esc(l.url)+'" target="_blank" rel="noopener">'+esc(l.label||l.url)+' ↗</a>'}).join('')+'</div>';
     h+='<div class="actions">';
-    if(c.status==='waiting')h+='<button class="btn go" data-a="reply">They replied</button><button class="btn" data-a="again">Write another follow-up</button><button class="btn" data-a="close">Close</button>';
+    if(c.status==='waiting')h+='<button class="btn go" data-a="reply">They replied</button><button class="btn" data-a="again">Write another follow-up</button><button class="btn" data-a="flag">Needs changing</button><button class="btn" data-a="close">Close</button>';
     else h+='<button class="btn" data-a="reopen">Reopen</button>';
     h+='<button class="btn" data-a="edit">Edit</button>';
     if(c.leadId)h+='<button class="btn link" data-lead="'+esc(c.leadId)+'">History</button>';
@@ -491,12 +498,31 @@ app.addEventListener('click',function(ev){
         if(cur&&!force&&(cur.rev||0)!==base){conflicts[id]=cur;throw new Error('conflict')}
         var next=cur||{id:id,status:'todo',links:[],log:[]};
         ['lead','company','leadId','owner','due','channel','to','cc','subject','body','note'].forEach(function(f){next[f]=d[f]||''});
+        if(!isNew)next.flag=null;
         addLog(next,isNew?'added this card':'edited this card');return next;
       });
     }).then(function(r){
       if(r===false){setStatus('That card was deleted.',true);delete editing[id];blur();return load(true)}
       delete editing[id];delete conflicts[id];blur();setStatus('Saved.');render();
     }).catch(function(e){if(e.message==='conflict'){setStatus('');blur();render();return}setStatus('Not saved ('+e.message+'). Your text is still here; try again.',true)});
+    return;
+  }
+  if(a==='flag'){flagging[id]='';render();var w=art.querySelector('[data-x="why"]');if(w)w.focus();return}
+  if(a==='flagcancel'){delete flagging[id];blur();return render()}
+  if(a==='flagrewrite'||a==='flagclose'){
+    var why=(art.querySelector('[data-x="why"]')||{}).value||'';why=why.trim();
+    if(a==='flagrewrite'&&!why){setStatus('Say what changed, so the new draft gets it right.',true);return}
+    setStatus('Saving…');
+    saveCard(id,function(cur){
+      if(!cur)return false;
+      if(a==='flagrewrite'){cur.status='todo';cur.flag={why:why,by:who(),at:Date.now()};addLog(cur,'asked for a rewrite: '+why)}
+      else{cur.status='done';cur.flag=null;cur.closedWhy=why;addLog(cur,'closed it as not needed'+(why?': '+why:''))}
+      return cur;
+    }).then(function(r){
+      delete flagging[id];blur();
+      if(r===false){setStatus('That card was deleted.',true);return load(true)}
+      setStatus(a==='flagrewrite'?'Flagged. Claude picks it up and writes a new draft; it stays in To send.':'Closed. It is in the Archive under Closed.');render();
+    }).catch(function(e){setStatus('Not saved ('+e.message+'). Your note is still here; try again.',true)});
     return;
   }
   if(a==='usesaved'){cards[id]=conflicts[id];delete conflicts[id];delete editing[id];blur();return render()}
