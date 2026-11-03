@@ -136,8 +136,8 @@ var DB='https://talex-media-default-rtdb.firebaseio.com/drafts/';
 var KEY=(location.hash.match(/k=([a-z0-9-]{6,80})/)||[])[1]||'';
 var app=document.getElementById('app');
 var meSel=document.getElementById('me');
-var TABS={todo:'To send',waiting:'Waiting on reply',archive:'Archive',leads:'Leads'};
-var cards={},leads={},view='todo',owner='All',openLead=null,convFilter='All',leadQuery='',editing={},conflicts={},adding=null,loadedOnce=false;
+var TABS={todo:'To send',waiting:'Waiting on reply',docs:'Docs to review',archive:'Archive',leads:'Leads'};
+var cards={},leads={},docs={},editingDoc={},view='todo',owner='All',openLead=null,convFilter='All',leadQuery='',editing={},conflicts={},adding=null,loadedOnce=false;
 
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 meSel.value=store('fu-me')||'';
@@ -162,11 +162,11 @@ function hist(lid){var h=(leads[lid]&&leads[lid].history)||{};return Object.keys
 function hasNewReply(c){var l=c.leadId&&leads[c.leadId];return!!(l&&l.lastInboundAt&&c.status!=='done'&&c.sentAt&&l.lastInboundAt>c.sentAt)}
 function chanOf(e){return e.dir==='call'||e.channel==='Call'?'Call':e.channel==='LinkedIn'?'LinkedIn':e.channel==='Email'?'Email':'Other'}
 function leadName(lid){return(leads[lid]&&leads[lid].name)||lid}
-function busy(){return Object.keys(editing).length||adding}
+function busy(){return Object.keys(editing).length||Object.keys(editingDoc).length||adding}
 
 function load(quiet){
   return fetch(ROOT+'.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(v){
-    v=v||{};cards=v.cards||{};leads=v.leads||{};loadedOnce=true;render();
+    v=v||{};cards=v.cards||{};leads=v.leads||{};docs=v.docs||{};loadedOnce=true;render();
     if(!quiet)setStatus('Up to date '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}));
   }).catch(function(e){setStatus('Could not load the board ('+e.message+'). Check your connection and refresh.',true);if(!loadedOnce)render()});
 }
@@ -174,8 +174,9 @@ function put(path,val){return fetch(ROOT+path+'.json',{method:'PUT',cache:'no-st
 
 // Compare-and-set on one card: read it with its ETag, apply the change to the
 // saved copy, write back only if nobody saved in between, retry if they did.
-function saveCard(id,mutate,tries){
-  tries=tries||0;var url=ROOT+'/cards/'+encodeURIComponent(id)+'.json';
+function saveCard(id,mutate){return saveItem('cards',id,mutate)}
+function saveItem(coll,id,mutate,tries){
+  tries=tries||0;var url=ROOT+'/'+coll+'/'+encodeURIComponent(id)+'.json';
   return fetch(url,{cache:'no-store',headers:{'X-Firebase-ETag':'true'}}).then(function(r){
     if(!r.ok)throw new Error('HTTP '+r.status);var etag=r.headers.get('ETag');
     return r.json().then(function(cur){return{etag:etag,cur:cur}});
@@ -184,8 +185,8 @@ function saveCard(id,mutate,tries){
     if(next===false)return false;
     next.rev=((x.cur&&x.cur.rev)||0)+1;next.updatedAt=Date.now();
     return fetch(url,{method:'PUT',cache:'no-store',headers:{'if-match':x.etag,'Content-Type':'application/json'},body:JSON.stringify(next)}).then(function(r){
-      if(r.status===412&&tries<2)return saveCard(id,mutate,tries+1);
-      if(!r.ok)throw new Error('HTTP '+r.status);cards[id]=next;return next;
+      if(r.status===412&&tries<2)return saveItem(coll,id,mutate,tries+1);
+      if(!r.ok)throw new Error('HTTP '+r.status);(coll==='docs'?docs:cards)[id]=next;return next;
     });
   });
 }
@@ -325,6 +326,8 @@ function archiveView(){
   var closed=list().filter(function(c){return c.status==='done'&&(owner==='All'||c.owner===owner)}).sort(function(a,b){return(b.updatedAt||0)-(a.updatedAt||0)});
   var h='<h2>Sent messages</h2>';
   h+=sent.length?sent.map(function(x){var e=x.e;return'<div class="arow"><div class="hd"><b>'+leadLink(x.lid,leadName(x.lid))+'</b><span>'+esc(fmtDay(e.date))+' · '+esc(e.channel||'')+(e.by?' · '+esc(e.by):'')+'</span></div>'+(e.subject?'<div class="s" style="font-weight:500;margin-top:4px">'+esc(e.subject)+'</div>':'')+(e.text?(e.exact===false?'<div style="margin-top:4px;color:var(--txt2);font-size:.9rem">'+linkify(e.text)+'</div>':'<details><summary>Show message</summary><div class="msg">'+linkify(e.text)+'</div></details>'):'')+'</div>'}).join(''):'<div class="empty">Nothing sent yet.</div>';
+  var shared=docList().filter(function(d){return d.status==='shared'&&(owner==='All'||d.owner===owner||d.sharedBy===owner)}).sort(function(a,b){return(b.sharedAt||0)-(a.sharedAt||0)});
+  if(shared.length)h+='<h2>Shared docs</h2>'+shared.map(docHtml).join('');
   if(closed.length)h+='<h2>Closed</h2>'+closed.map(cardHtml).join('');
   return h;
 }
@@ -339,18 +342,92 @@ function leadsView(){
   return h;
 }
 
+function docList(){return Object.keys(docs).map(function(k){return docs[k]}).filter(Boolean)}
+function docHtml(d){
+  var t=today(),open=d.status!=='shared';
+  var cls='card doc'+(open&&d.due&&d.due<t?' overdue':(open&&d.due===t?' today':''));
+  var h='<article class="'+cls+'" data-doc="'+esc(d.id)+'"><div class="top"><div class="lead">'+esc(d.company||'Untitled doc')+(d.lead?' <span class="co">for '+leadLink(d.leadId,d.lead)+'</span>':'')+'</div><div class="chips">';
+  h+=ownerChip(d.owner)+'<span class="chip">'+esc(d.type||'Doc')+'</span>';
+  if(d.status==='ready')h+='<span class="chip sent">Ready to send</span>';
+  if(d.status==='shared')h+='<span class="chip sent">Shared '+esc(fmtWhen(d.sharedAt))+(d.sharedVia?' by '+esc(d.sharedVia):'')+(d.sharedBy?' ('+esc(d.sharedBy)+')':'')+'</span>';
+  else if(d.due)h+=dueChip({status:'todo',due:d.due});
+  h+='</div></div>';
+  if(editingDoc[d.id]){
+    var e=editingDoc[d.id];
+    h+='<div class="edit"><div class="row"><div><label>Company</label><input data-d="company" value="'+esc(e.company)+'"></div><div><label>Lead</label><input data-d="lead" value="'+esc(e.lead)+'"></div></div>';
+    h+='<div class="row"><div><label>Type</label><select data-d="type">'+['Strategy doc','Proposal','Deck','Brainstorm guide','Other'].map(function(o){return'<option'+(e.type===o?' selected':'')+'>'+o+'</option>'}).join('')+'</select></div><div><label>Who reviews</label><select data-d="owner">'+['Tom','Evan'].map(function(o){return'<option'+(e.owner===o?' selected':'')+'>'+o+'</option>'}).join('')+'</select></div></div>';
+    h+='<label>Link</label><input data-d="link" value="'+esc(e.link)+'"><div class="row"><div><label>Review by</label><input type="date" data-d="due" value="'+esc(e.due)+'"></div><div></div></div>';
+    h+='<label>What needs doing</label><textarea data-d="ask" style="min-height:90px">'+esc(e.ask)+'</textarea></div>';
+    h+='<div class="actions"><button class="btn primary" data-da="save">Save</button><button class="btn" data-da="cancel">Cancel</button></div>';
+  }else{
+    if(d.ask)h+='<div class="note">'+linkify(d.ask)+'</div>';
+    var links=(d.link?[{label:'Open the '+(d.type||'doc').toLowerCase(),url:d.link}]:[]).concat(d.links||[]);
+    if(links.length)h+='<div class="links">'+links.map(function(l){return'<a href="'+esc(l.url)+'" target="_blank" rel="noopener">'+esc(l.label||l.url)+' ↗</a>'}).join('')+'</div>';
+    h+='<div class="actions">';
+    if(d.status==='review')h+='<button class="btn go" data-da="ready">Reviewed, ready to send</button>';
+    if(d.status==='ready')h+='<button class="btn go" data-da="shared-Email">Shared by email</button><button class="btn go" data-da="shared-LinkedIn">Shared on LinkedIn</button><button class="btn" data-da="review">Back to review</button>';
+    if(d.status==='shared')h+='<button class="btn" data-da="ready">Undo shared</button>';
+    h+='<button class="btn" data-da="edit">Edit</button>';
+    if(d.leadId)h+='<button class="btn link" data-lead="'+esc(d.leadId)+'">History</button>';
+    h+='</div>';
+  }
+  var last=(d.log||[]).slice(-1)[0];
+  if(last)h+='<div class="log">Last: '+esc(last.by)+' '+esc(last.what)+', '+esc(fmtWhen(last.at))+'</div>';
+  return h+'</article>';
+}
+function docsView(){
+  var mine=docList().filter(function(d){return d.status!=='shared'&&(owner==='All'||d.owner===owner)});
+  var by=function(a,b){return(a.due||'9999').localeCompare(b.due||'9999')};
+  var rev=mine.filter(function(d){return d.status==='review'}).sort(by),ready=mine.filter(function(d){return d.status==='ready'}).sort(by);
+  var h='<div class="note" style="padding:12px 0 0">Docs waiting on a look before they go out. These are not follow-ups. Sharing one records it in the link sheet.</div>';
+  h+='<h2>To review</h2>'+(rev.length?rev.map(docHtml).join(''):'<div class="empty">Nothing to review.</div>');
+  if(ready.length)h+='<h2>Ready to send</h2>'+ready.map(docHtml).join('');
+  return h;
+}
+function docAct(id,a,art){
+  var d=docs[id];if(!d)return;
+  if(a==='edit'){editingDoc[id]=JSON.parse(JSON.stringify(d));return render()}
+  if(a==='cancel'){if(editingDoc[id]&&editingDoc[id]._new)delete docs[id];delete editingDoc[id];blur();return render()}
+  if(a==='save'){
+    var e=Object.assign(editingDoc[id],collect(art,'data-d'));if(!e.company.trim()){setStatus('Add the company first.',true);return}
+    setStatus('Saving…');
+    (e.leadId||!e.lead.trim()?Promise.resolve(e.leadId||''):ensureLead(e.lead.trim(),e.company)).then(function(lid){
+      return saveItem('docs',id,function(cur){
+        var next=cur||{id:id,status:'review',links:[],log:[]};
+        ['company','lead','type','owner','link','due','ask'].forEach(function(f){next[f]=e[f]||''});next.leadId=lid;
+        addLog(next,e._new?'added this doc':'edited this doc');return next;
+      });
+    }).then(function(){delete editingDoc[id];blur();setStatus('Saved.');render()}).catch(function(err){setStatus('Not saved ('+err.message+'). Try again.',true)});
+    return;
+  }
+  if(!meSel.value&&!confirm('Pick who you are at the top first, so we can see who did what. Continue anyway?'))return;
+  var via=a.indexOf('shared-')===0?a.slice(7):'';
+  setStatus('Saving…');
+  saveItem('docs',id,function(cur){
+    if(!cur)return false;
+    if(via){cur.status='shared';cur.sharedAt=Date.now();cur.sharedBy=who();cur.sharedVia=via;cur.sheetSyncedAt=null;addLog(cur,'shared it by '+via.toLowerCase())}
+    else if(a==='ready'){cur.status='ready';cur.sharedAt=null;cur.sharedBy=null;cur.sharedVia=null;addLog(cur,'marked it ready to send')}
+    else if(a==='review'){cur.status='review';addLog(cur,'moved it back to review')}
+    return cur;
+  }).then(function(r){
+    if(r&&via&&r.leadId)return addHistory(r.leadId,{date:today(),dir:'out',channel:via,by:who(),subject:(r.type||'Doc')+' shared',text:'Shared the '+(r.type||'doc').toLowerCase()+': '+(r.link||''),exact:true,docId:id});
+  }).then(function(){setStatus(via?'Shared. It is in the history, and the link sheet updates on its own.':'Saved.');render()}).catch(function(err){setStatus('Not saved ('+err.message+'). Try again.',true)});
+}
+
 function render(){
   var active=document.activeElement;
   if(active&&active.closest&&active.closest('.edit'))return; // never redraw under someone who is typing
-  var all=list(),counts={todo:0,waiting:0};
+  var all=list(),counts={todo:0,waiting:0,docs:0};
   all.forEach(function(c){if((owner==='All'||c.owner===owner)&&counts[c.status]!=null)counts[c.status]++});
+  docList().forEach(function(d){if(d.status!=='shared'&&(owner==='All'||d.owner===owner))counts.docs++});
   var h='<div class="bar">';
-  ['todo','waiting','archive','leads'].forEach(function(s){h+='<button class="tab" data-view="'+s+'" aria-pressed="'+(view===s)+'">'+TABS[s]+(counts[s]!=null?'<span class="n">'+counts[s]+'</span>':'')+'</button>'});
+  ['todo','waiting','docs','archive','leads'].forEach(function(s){h+='<button class="tab" data-view="'+s+'" aria-pressed="'+(view===s)+'">'+TABS[s]+(counts[s]!=null?'<span class="n">'+counts[s]+'</span>':'')+'</button>'});
   h+='<span class="spacer"></span>';
   if(view!=='leads')['All','Tom','Evan'].forEach(function(o){h+='<button class="who" data-owner="'+o+'" aria-pressed="'+(owner===o)+'">'+o+'</button>'});
   h+='<button class="add" data-a="new">+ Add</button></div><div id="status"></div>';
   if(view==='leads')h+=openLead?leadView(openLead):leadsView();
   else if(view==='archive')h+=archiveView();
+  else if(view==='docs')h+=docsView();
   else{
     var shown=all.filter(function(c){return c.status===view&&(owner==='All'||c.owner===owner)});
     shown.sort(function(a,b){return(a.due||'9999').localeCompare(b.due||'9999')||String(a.lead).localeCompare(String(b.lead))});
@@ -373,7 +450,14 @@ app.addEventListener('click',function(ev){
   if(b.dataset.view){view=b.dataset.view;openLead=null;adding=null;store('fu-view',view);return render()}
   if(b.dataset.cf){convFilter=b.dataset.cf;return render()}
   if(b.dataset.owner){owner=b.dataset.owner;store('fu-owner',owner);return render()}
+  if(b.dataset.da){var dart=b.closest('.doc');return docAct(dart.dataset.doc,b.dataset.da,dart)}
   var a=b.dataset.a;if(!a)return;
+  if(a==='new'&&view==='docs'){
+    var did='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    docs[did]={id:did,company:'',lead:'',leadId:'',type:'Strategy doc',owner:'Tom',link:'',due:today(),ask:'',status:'review',log:[]};
+    editingDoc[did]=JSON.parse(JSON.stringify(docs[did]));editingDoc[did]._new=true;render();
+    var f=app.querySelector('[data-doc="'+did+'"] [data-d="company"]');if(f)f.focus();return;
+  }
   if(a==='back'){openLead=null;adding=null;return render()}
   if(a==='newev'){adding={lid:b.dataset.l,dir:'in'};render();var t=app.querySelector('[data-g="text"]');if(t)t.focus();return}
   if(a==='cancelev'){adding=null;blur();return render()}
