@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Talex Follow-ups</title>
+<link rel="icon" type="image/png" sizes="192x192" href="https://static.wixstatic.com/media/3c6878_9a68ae0b3ff84e198fdd43fac493e294~mv2_d_1500_1500_s_2.png/v1/fill/w_192,h_192,lg_1,usm_0.66_1.00_0.01/3c6878_9a68ae0b3ff84e198fdd43fac493e294~mv2_d_1500_1500_s_2.png"/>
+<link rel="shortcut icon" href="https://static.wixstatic.com/media/3c6878_9a68ae0b3ff84e198fdd43fac493e294~mv2_d_1500_1500_s_2.png/v1/fill/w_32,h_32,lg_1,usm_0.66_1.00_0.01/3c6878_9a68ae0b3ff84e198fdd43fac493e294~mv2_d_1500_1500_s_2.png" type="image/png"/>
+<link rel="apple-touch-icon" href="https://static.wixstatic.com/media/3c6878_9a68ae0b3ff84e198fdd43fac493e294~mv2_d_1500_1500_s_2.png/v1/fill/w_180,h_180,lg_1,usm_0.66_1.00_0.01/3c6878_9a68ae0b3ff84e198fdd43fac493e294~mv2_d_1500_1500_s_2.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --o:#E85A0C;--o-dim:rgba(232,90,12,0.08);--o-border:rgba(232,90,12,0.28);
+  --bg:#F5F2EC;--surface:#FFFFFF;--surface2:#FAF8F5;--border:#E2DDD6;--border-strong:#C8C2BA;
+  --txt:#1A1816;--txt2:#6B625A;--txt3:#A89E96;
+  --green:#2D8C52;--green-bg:#EDF7F2;--green-border:#A8D9BC;
+  --red:#C0392B;--red-bg:#FDF0EE;--red-border:#E8BEBC;
+  --amber:#B07D10;--amber-bg:#FDF7EC;--amber-border:#E0C880;
+  --blue:#2f5a8a;--blue-bg:#eef3f9;--blue-border:#b9c7da;
+}
+*{box-sizing:border-box}
+html{background:var(--bg);color:var(--txt);font-family:'DM Sans',system-ui,sans-serif;font-size:15px;line-height:1.55}
+body{margin:0;background:var(--bg);min-height:100vh}
+#wrap{max-width:780px;margin:0 auto;padding:0 16px 5rem}
+header{padding:24px 0 12px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;margin-bottom:10px}
+.brand img{height:28px;width:auto}
+.brand span{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.08em;color:var(--txt)}
+h1{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:2.4rem;letter-spacing:.02em;margin:0;line-height:1}
+h1 span{color:var(--o)}
+.sub{color:var(--txt2);font-size:.85rem;margin-top:4px}
+.me{font-size:.85rem;color:var(--txt2)}
+.me select{font:inherit;padding:4px 6px;border:1px solid var(--border-strong);border-radius:6px;background:var(--surface)}
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0;border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tab{font:inherit;font-weight:500;border:1px solid var(--border-strong);background:var(--surface);color:var(--txt);padding:7px 12px;border-radius:999px;cursor:pointer}
+.tab[aria-pressed=true]{background:var(--txt);color:#fff;border-color:var(--txt)}
+.tab .n{opacity:.6;margin-left:4px}
+.spacer{flex:1}
+.who{font:inherit;font-size:.85rem;border:1px solid var(--border);background:transparent;color:var(--txt2);padding:5px 10px;border-radius:999px;cursor:pointer}
+.who[aria-pressed=true]{border-color:var(--o);color:var(--o);background:var(--o-dim)}
+.add{font:inherit;font-weight:700;border:0;background:var(--o);color:#fff;padding:7px 14px;border-radius:999px;cursor:pointer}
+#status{font-size:.8rem;color:var(--txt3);padding:8px 0 0;min-height:1.6em}
+#status.err{color:var(--red)}
+h2{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:1.4rem;letter-spacing:.03em;margin:22px 0 4px;color:var(--txt2)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin:14px 0;overflow:hidden}
+.card.overdue{border-left:4px solid var(--red)}
+.card.today{border-left:4px solid var(--o)}
+.top{padding:14px 16px 10px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.lead{font-weight:700;font-size:1.05rem}
+.lead a{color:inherit;text-decoration:none;border-bottom:1px dashed var(--border-strong);cursor:pointer}
+.co{color:var(--txt2);font-weight:400}
+.chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chip{font-size:.75rem;font-weight:500;padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--txt2);background:var(--surface2);white-space:nowrap}
+.chip.tom{border-color:var(--o-border);color:var(--o);background:var(--o-dim)}
+.chip.evan{border-color:var(--blue-border);color:var(--blue);background:var(--blue-bg)}
+.chip.due-over{border-color:var(--red-border);color:var(--red);background:var(--red-bg)}
+.chip.due-today{border-color:var(--amber-border);color:var(--amber);background:var(--amber-bg)}
+.chip.sent{border-color:var(--green-border);color:var(--green);background:var(--green-bg)}
+.note{padding:0 16px 10px;color:var(--txt2);font-size:.9rem}
+.meta{margin:0 16px;border-top:1px solid var(--border);font-size:.88rem}
+.meta div{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)}
+.meta b{width:60px;flex:none;color:var(--txt3);font-weight:500}
+.meta span{word-break:break-word}
+.msg{margin:12px 16px;padding:14px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;white-space:pre-wrap;word-break:break-word;font-size:.95rem;line-height:1.6}
+.msg a,.links a,.conv a{color:var(--o)}
+.links{padding:0 16px 8px;font-size:.88rem;display:flex;flex-direction:column;gap:4px}
+.nomsg{margin:12px 16px;color:var(--txt3);font-style:italic;font-size:.9rem}
+.actions{padding:10px 16px 14px;display:flex;gap:8px;flex-wrap:wrap}
+.btn{font:inherit;font-size:.88rem;font-weight:500;border:1px solid var(--border-strong);background:var(--surface);color:var(--txt);padding:7px 12px;border-radius:8px;cursor:pointer}
+.btn.primary{background:var(--txt);color:#fff;border-color:var(--txt)}
+.btn.go{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.link{border:0;background:transparent;color:var(--o);padding:7px 4px}
+.log{padding:0 16px 12px;font-size:.78rem;color:var(--txt3)}
+.edit{padding:4px 16px 4px}
+.edit label{display:block;font-size:.78rem;color:var(--txt2);margin:8px 0 3px}
+.edit input,.edit textarea,.edit select{width:100%;font:inherit;font-size:.92rem;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px;background:#fff;color:var(--txt)}
+.edit textarea{min-height:200px;line-height:1.55}
+.edit .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.conflict{margin:10px 16px;padding:10px 12px;border:1px solid var(--amber-border);background:var(--amber-bg);border-radius:8px;font-size:.88rem}
+.empty{color:var(--txt2);text-align:center;padding:40px 0}
+.nokey{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:24px}
+.search{width:100%;font:inherit;padding:9px 12px;border:1px solid var(--border-strong);border-radius:10px;background:var(--surface);margin:14px 0 4px}
+.lrow{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin:8px 0;cursor:pointer;width:100%;font:inherit;text-align:left;color:inherit}
+.lrow:hover{border-color:var(--border-strong)}
+.lrow small{display:block;color:var(--txt2);font-size:.82rem}
+.arow{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin:10px 0;padding:12px 14px}
+.arow .hd{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:.88rem}
+.arow .hd b a{color:inherit;cursor:pointer;border-bottom:1px dashed var(--border-strong)}
+.arow details summary{cursor:pointer;color:var(--txt2);font-size:.85rem;margin-top:6px}
+.arow details .msg{margin:8px 0 0}
+.convhead{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin:14px 0}
+.convhead .nm{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;line-height:1;letter-spacing:.02em}
+.convhead .det{color:var(--txt2);font-size:.88rem;margin-top:6px;word-break:break-word}
+.conv{position:relative;margin:10px 0 20px;padding-left:18px;border-left:2px solid var(--border)}
+.ev{position:relative;margin:0 0 14px}
+.ev:before{content:'';position:absolute;left:-24px;top:14px;width:10px;height:10px;border-radius:50%;background:var(--border-strong);border:2px solid var(--bg)}
+.ev.out:before{background:var(--o)}
+.ev.in:before{background:var(--blue)}
+.ev.call:before{background:var(--green)}
+.ev .box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px}
+.ev.out .box{background:#fff8f3;border-color:var(--o-border)}
+.ev.in .box{background:var(--blue-bg);border-color:var(--blue-border)}
+.ev.call .box{background:var(--green-bg);border-color:var(--green-border)}
+.ev .h{font-size:.8rem;color:var(--txt2);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ev .h b{color:var(--txt)}
+.ev .s{font-weight:500;font-size:.9rem;margin-top:4px}
+.ev .t{white-space:pre-wrap;word-break:break-word;font-size:.92rem;margin-top:4px}
+.ev .sum{font-size:.72rem;color:var(--txt3);border:1px solid var(--border);border-radius:999px;padding:0 6px}
+@media (max-width:560px){h1{font-size:2rem}.edit .row{grid-template-columns:1fr}.meta b{width:52px}}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header>
+    <div>
+      <a class="brand" href="https://www.talexmedia.com" target="_blank" rel="noopener"><img src="https://static.wixstatic.com/media/3c6878_456d81e9cdb84e6c8bb3260ebfcc0523~mv2.png" alt="Talex Media"><span>Talex Media</span></a>
+      <h1>Follow-<span>ups</span></h1>
+      <div class="sub">Every message we owe someone, in one place. Copy it, send it, mark it sent.</div>
+    </div>
+    <div class="me">I am <select id="me"><option value="">pick</option><option>Tom</option><option>Evan</option></select></div>
+  </header>
+  <div id="app"></div>
+</div>
+<script>
+(function(){
+var DB='https://talex-media-default-rtdb.firebaseio.com/drafts/';
+var KEY=(location.hash.match(/k=([a-z0-9-]{6,80})/)||[])[1]||'';
+var app=document.getElementById('app');
+var meSel=document.getElementById('me');
+var TABS={todo:'To send',waiting:'Waiting on reply',archive:'Archive',leads:'Leads'};
+var cards={},leads={},view='todo',owner='All',openLead=null,leadQuery='',editing={},conflicts={},adding=null,loadedOnce=false;
+
+function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+meSel.value=store('fu-me')||'';
+meSel.onchange=function(){store('fu-me',meSel.value)};
+view=store('fu-view')||'todo';if(!TABS[view])view='todo';owner=store('fu-owner')||'All';
+
+if(!KEY){app.innerHTML='<div class="nokey"><b>This link is missing its key.</b><p>Open the board with the full link Evan sent you. It ends in <code>#k=…</code>.</p></div>';return}
+var ROOT=DB+KEY;
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function linkify(s){return esc(s).replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)]/g,function(u){return '<a href="'+u+'" target="_blank" rel="noopener">'+u+'</a>'})}
+function today(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function isoOf(ms){var d=new Date(ms);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function fmtDate(iso){if(!iso)return'';var p=iso.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}
+function fmtDay(iso){if(!iso)return'';var p=iso.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}
+function fmtWhen(ms){var d=new Date(ms);return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}
+function who(){return meSel.value||'Someone'}
+function slug(s){return String(s||'').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60)||'lead'}
+function setStatus(t,err){var s=document.getElementById('status');if(s){s.textContent=t||'';s.className=err?'err':''}}
+function list(){return Object.keys(cards).map(function(k){return cards[k]}).filter(Boolean)}
+function hist(lid){var h=(leads[lid]&&leads[lid].history)||{};return Object.keys(h).map(function(k){var e=h[k];e._id=k;return e}).filter(Boolean).sort(function(a,b){return(a.date||'').localeCompare(b.date||'')||(a.at||0)-(b.at||0)})}
+function leadName(lid){return(leads[lid]&&leads[lid].name)||lid}
+function busy(){return Object.keys(editing).length||adding}
+
+function load(quiet){
+  return fetch(ROOT+'.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(v){
+    v=v||{};cards=v.cards||{};leads=v.leads||{};loadedOnce=true;render();
+    if(!quiet)setStatus('Up to date '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}));
+  }).catch(function(e){setStatus('Could not load the board ('+e.message+'). Check your connection and refresh.',true);if(!loadedOnce)render()});
+}
+function put(path,val){return fetch(ROOT+path+'.json',{method:'PUT',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(val)}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return val})}
+
+// Compare-and-set on one card: read it with its ETag, apply the change to the
+// saved copy, write back only if nobody saved in between, retry if they did.
+function saveCard(id,mutate,tries){
+  tries=tries||0;var url=ROOT+'/cards/'+encodeURIComponent(id)+'.json';
+  return fetch(url,{cache:'no-store',headers:{'X-Firebase-ETag':'true'}}).then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);var etag=r.headers.get('ETag');
+    return r.json().then(function(cur){return{etag:etag,cur:cur}});
+  }).then(function(x){
+    var next=mutate(x.cur?JSON.parse(JSON.stringify(x.cur)):null);
+    if(next===false)return false;
+    next.rev=((x.cur&&x.cur.rev)||0)+1;next.updatedAt=Date.now();
+    return fetch(url,{method:'PUT',cache:'no-store',headers:{'if-match':x.etag,'Content-Type':'application/json'},body:JSON.stringify(next)}).then(function(r){
+      if(r.status===412&&tries<2)return saveCard(id,mutate,tries+1);
+      if(!r.ok)throw new Error('HTTP '+r.status);cards[id]=next;return next;
+    });
+  });
+}
+function addLog(c,what){c.log=(c.log||[]).concat([{at:Date.now(),by:who(),what:what}]).slice(-12)}
+// History entries get unique keys, so two people adding at once never collide.
+function addHistory(lid,e){
+  if(!lid)return Promise.resolve();var eid='e'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  e.at=Date.now();return put('/leads/'+encodeURIComponent(lid)+'/history/'+eid,e).then(function(){leads[lid]=leads[lid]||{name:lid};leads[lid].history=leads[lid].history||{};leads[lid].history[eid]=e});
+}
+function ensureLead(name,company){
+  var lid=slug(name);if(leads[lid])return Promise.resolve(lid);
+  var l={name:name,company:company||'',history:{}};return put('/leads/'+lid,l).then(function(){leads[lid]=l;return lid});
+}
+
+function act(id,kind){
+  var label={sent:'marked sent',reply:'marked replied',again:'moved back to To send',reopen:'reopened',dismiss:'closed without sending',close:'closed'}[kind];
+  var before=cards[id];setStatus('Saving…');
+  saveCard(id,function(c){
+    if(!c)return false;
+    if(kind==='sent'){c.status='waiting';c.sentAt=Date.now();c.sentBy=who()}
+    if(kind==='reply'||kind==='dismiss'||kind==='close')c.status='done';
+    if(kind==='again'){c.status='todo';c.body='';c.due=today()}
+    if(kind==='reopen')c.status='todo';
+    addLog(c,label);return c;
+  }).then(function(r){
+    if(r===false){setStatus('That card was deleted.',true);return load(true)}
+    if(kind==='sent'&&r.leadId)return addHistory(r.leadId,{date:today(),dir:'out',channel:r.channel||'Email',by:who(),subject:r.subject||'',text:r.body||'',exact:true,cardId:id}).then(function(){return r});
+    return r;
+  }).then(function(r){
+    if(!r)return;
+    if(kind==='reply'&&r.leadId){view='leads';openLead=r.leadId;adding={lid:r.leadId,dir:'in'};setStatus('Marked replied. Paste their reply below so it is in the history.');return render()}
+    setStatus(kind==='sent'?'Sent. The message is now in the Archive and in '+leadName(r.leadId||'')+'’s history.':'Saved.');render();
+  }).catch(function(e){setStatus('Not saved ('+e.message+'). Try again.',true)});
+}
+
+function copy(text,btn){
+  function done(){var o=btn.textContent;btn.textContent='Copied';setTimeout(function(){btn.textContent=o},1400)}
+  if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(text).then(done,fallback)}else fallback();
+  function fallback(){var t=document.createElement('textarea');t.value=text;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.select();try{document.execCommand('copy');done()}catch(e){}document.body.removeChild(t)}
+}
+
+function dueChip(c){
+  if(!c.due)return'';var t=today();
+  var label=c.status==='waiting'?'Check '+fmtDate(c.due):'Due '+fmtDate(c.due);
+  if(c.status!=='done'&&c.due<t)return'<span class="chip due-over">'+esc(label)+' · overdue</span>';
+  if(c.status!=='done'&&c.due===t)return'<span class="chip due-today">'+esc(c.status==='waiting'?'Check today':'Due today')+'</span>';
+  return'<span class="chip">'+esc(label)+'</span>';
+}
+function ownerChip(o){return'<span class="chip '+(o==='Tom'?'tom':o==='Evan'?'evan':'')+'">'+esc(o||'Unassigned')+'</span>'}
+function leadLink(lid,label){return lid?'<a data-lead="'+esc(lid)+'">'+esc(label)+'</a>':esc(label)}
+
+function cardHtml(c){
+  var id=esc(c.id),t=today();
+  var cls='card'+(c.status!=='done'&&c.due&&c.due<t?' overdue':(c.status!=='done'&&c.due===t?' today':''));
+  var h='<article class="'+cls+'" data-id="'+id+'"><div class="top"><div class="lead">'+leadLink(c.leadId,c.lead)+(c.company?' <span class="co">· '+esc(c.company)+'</span>':'')+'</div><div class="chips">';
+  h+=ownerChip(c.owner);
+  if(c.channel)h+='<span class="chip">'+esc(c.channel)+'</span>';
+  if(c.sentAt&&c.status!=='todo')h+='<span class="chip sent">Sent '+esc(fmtWhen(c.sentAt))+'</span>';
+  h+=dueChip(c)+'</div></div>';
+  if(c.note)h+='<div class="note">'+linkify(c.note)+'</div>';
+  if(conflicts[c.id])h+='<div class="conflict">Someone else saved this card while you were editing. <button class="btn" data-a="keepmine">Keep mine</button> <button class="btn" data-a="usesaved">Use saved version</button></div>';
+  if(editing[c.id]){
+    var e=editing[c.id].draft;
+    var opts='<option value="">(new lead, from the name)</option>'+Object.keys(leads).sort(function(a,b){return leadName(a).localeCompare(leadName(b))}).map(function(l){return'<option value="'+esc(l)+'"'+(e.leadId===l?' selected':'')+'>'+esc(leadName(l))+'</option>'}).join('');
+    h+='<div class="edit"><div class="row"><div><label>Lead</label><input data-f="lead" value="'+esc(e.lead)+'"></div><div><label>Company</label><input data-f="company" value="'+esc(e.company)+'"></div></div>';
+    h+='<label>Conversation history</label><select data-f="leadId">'+opts+'</select>';
+    h+='<div class="row"><div><label>Owner</label><select data-f="owner">'+['Tom','Evan'].map(function(o){return'<option'+(e.owner===o?' selected':'')+'>'+o+'</option>'}).join('')+'</select></div><div><label>'+(e.status==='waiting'?'Check again on':'Due')+'</label><input type="date" data-f="due" value="'+esc(e.due)+'"></div></div>';
+    h+='<div class="row"><div><label>Channel</label><select data-f="channel">'+['Email','LinkedIn','WhatsApp','Other'].map(function(o){return'<option'+(e.channel===o?' selected':'')+'>'+o+'</option>'}).join('')+'</select></div><div><label>To</label><input data-f="to" value="'+esc(e.to)+'"></div></div>';
+    h+='<div class="row"><div><label>Cc</label><input data-f="cc" value="'+esc(e.cc)+'"></div><div><label>Subject</label><input data-f="subject" value="'+esc(e.subject)+'"></div></div>';
+    h+='<label>Message</label><textarea data-f="body">'+esc(e.body)+'</textarea><label>Note</label><input data-f="note" value="'+esc(e.note)+'"></div>';
+    h+='<div class="actions"><button class="btn primary" data-a="save">Save</button><button class="btn" data-a="cancel">Cancel</button></div>';
+  }else if(c.status==='todo'){
+    var meta='';
+    if(c.to)meta+='<div><b>To</b><span>'+esc(c.to)+'</span></div>';
+    if(c.cc)meta+='<div><b>Cc</b><span>'+esc(c.cc)+'</span></div>';
+    if(c.subject)meta+='<div><b>Subject</b><span>'+esc(c.subject)+'</span></div>';
+    if(meta)h+='<div class="meta">'+meta+'</div>';
+    h+=c.body?'<div class="msg">'+linkify(c.body)+'</div>':'<div class="nomsg">No message drafted yet.</div>';
+    if(c.links&&c.links.length)h+='<div class="links">'+c.links.map(function(l){return'<a href="'+esc(l.url)+'" target="_blank" rel="noopener">'+esc(l.label||l.url)+' ↗</a>'}).join('')+'</div>';
+    h+='<div class="actions">';
+    if(c.body)h+='<button class="btn primary" data-a="copybody">Copy message</button>';
+    if(c.subject)h+='<button class="btn" data-a="copysubj">Copy subject</button>';
+    h+='<button class="btn go" data-a="sent">Mark sent</button><button class="btn" data-a="edit">Edit</button><button class="btn" data-a="dismiss">Not needed</button>';
+    if(c.leadId)h+='<button class="btn link" data-lead="'+esc(c.leadId)+'">History</button>';
+    h+='</div>';
+  }else{
+    if(c.links&&c.links.length)h+='<div class="links">'+c.links.map(function(l){return'<a href="'+esc(l.url)+'" target="_blank" rel="noopener">'+esc(l.label||l.url)+' ↗</a>'}).join('')+'</div>';
+    h+='<div class="actions">';
+    if(c.status==='waiting')h+='<button class="btn go" data-a="reply">They replied</button><button class="btn" data-a="again">Write another follow-up</button><button class="btn" data-a="close">Close</button>';
+    else h+='<button class="btn" data-a="reopen">Reopen</button>';
+    h+='<button class="btn" data-a="edit">Edit</button>';
+    if(c.leadId)h+='<button class="btn link" data-lead="'+esc(c.leadId)+'">History</button>';
+    h+='</div>';
+  }
+  var last=(c.log||[]).slice(-1)[0];
+  if(last)h+='<div class="log">Last: '+esc(last.by)+' '+esc(last.what)+', '+esc(fmtWhen(last.at))+'</div>';
+  return h+'</article>';
+}
+
+function evHtml(e){
+  var kind={out:'Sent',in:'Received',call:'Call',note:'Note'}[e.dir]||'Note';
+  var h='<div class="ev '+esc(e.dir)+'"><div class="box"><div class="h"><b>'+esc(fmtDay(e.date))+'</b><span>'+esc(kind)+(e.channel&&e.channel!=='Call'?' · '+esc(e.channel):'')+(e.by?' · '+esc(e.by):'')+'</span>'+(e.exact===false?'<span class="sum">summary</span>':'')+'</div>';
+  if(e.subject)h+='<div class="s">'+esc(e.subject)+'</div>';
+  if(e.text)h+='<div class="t">'+linkify(e.text)+'</div>';
+  return h+'</div></div>';
+}
+
+function addFormHtml(lid){
+  var dir=adding.dir;
+  return '<div class="card"><div class="edit"><div class="row"><div><label>What happened</label><select data-g="dir">'+[['in','They replied'],['out','We sent'],['call','A call'],['note','A note']].map(function(o){return'<option value="'+o[0]+'"'+(dir===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div><div><label>Date</label><input type="date" data-g="date" value="'+today()+'"></div></div>'+
+  '<div class="row"><div><label>Channel</label><select data-g="channel">'+['Email','LinkedIn','WhatsApp','Call','Other'].map(function(o){return'<option>'+o+'</option>'}).join('')+'</select></div><div><label>Subject (optional)</label><input data-g="subject"></div></div>'+
+  '<label>Paste the message, or write what was said</label><textarea data-g="text" style="min-height:160px"></textarea></div>'+
+  '<div class="actions"><button class="btn primary" data-a="addev" data-l="'+esc(lid)+'">Add to history</button><button class="btn" data-a="cancelev">Cancel</button></div></div>';
+}
+
+function leadView(lid){
+  var l=leads[lid]||{name:lid};var hs=hist(lid);
+  var h='<div class="actions" style="padding:12px 0 0"><button class="btn" data-a="back">← All leads</button></div>';
+  h+='<div class="convhead"><div class="nm">'+esc(l.name)+'</div><div class="det">'+[l.company,l.email,l.linkedin?'<a href="'+esc(l.linkedin)+'" target="_blank" rel="noopener">LinkedIn ↗</a>':''].filter(Boolean).map(function(x,i){return i===2?x:esc(x)}).join(' · ')+'</div></div>';
+  var open=list().filter(function(c){return c.leadId===lid&&c.status!=='done'});
+  if(open.length){h+='<h2>Open now</h2>'+open.map(cardHtml).join('')}
+  h+='<h2>Conversation</h2>';
+  h+=adding&&adding.lid===lid?addFormHtml(lid):'<div class="actions" style="padding:4px 0 8px"><button class="btn primary" data-a="newev" data-l="'+esc(lid)+'">+ Add a reply, call or note</button></div>';
+  h+=hs.length?'<div class="conv">'+hs.slice().reverse().map(evHtml).join('')+'</div>':'<div class="empty">No history yet.</div>';
+  return h;
+}
+
+function archiveView(){
+  var sent=[];
+  Object.keys(leads).forEach(function(lid){hist(lid).forEach(function(e){if(e.dir==='out')sent.push({lid:lid,e:e})})});
+  sent=sent.filter(function(x){return owner==='All'||x.e.by===owner});
+  sent.sort(function(a,b){return(b.e.date||'').localeCompare(a.e.date||'')||(b.e.at||0)-(a.e.at||0)});
+  var closed=list().filter(function(c){return c.status==='done'&&(owner==='All'||c.owner===owner)}).sort(function(a,b){return(b.updatedAt||0)-(a.updatedAt||0)});
+  var h='<h2>Sent messages</h2>';
+  h+=sent.length?sent.map(function(x){var e=x.e;return'<div class="arow"><div class="hd"><b>'+leadLink(x.lid,leadName(x.lid))+'</b><span>'+esc(fmtDay(e.date))+' · '+esc(e.channel||'')+(e.by?' · '+esc(e.by):'')+'</span></div>'+(e.subject?'<div class="s" style="font-weight:500;margin-top:4px">'+esc(e.subject)+'</div>':'')+(e.text?(e.exact===false?'<div style="margin-top:4px;color:var(--txt2);font-size:.9rem">'+linkify(e.text)+'</div>':'<details><summary>Show message</summary><div class="msg">'+linkify(e.text)+'</div></details>'):'')+'</div>'}).join(''):'<div class="empty">Nothing sent yet.</div>';
+  if(closed.length)h+='<h2>Closed</h2>'+closed.map(cardHtml).join('');
+  return h;
+}
+
+function leadsView(){
+  var ids=Object.keys(leads).filter(function(lid){var l=leads[lid];var q=leadQuery.toLowerCase();return!q||(l.name+' '+(l.company||'')).toLowerCase().indexOf(q)>=0});
+  var last=function(lid){var hs=hist(lid);return hs.length?hs[hs.length-1].date:''};
+  ids.sort(function(a,b){return last(b).localeCompare(last(a))});
+  var h='<input class="search" id="lq" placeholder="Search leads" value="'+esc(leadQuery)+'">';
+  h+=ids.length?ids.map(function(lid){var l=leads[lid];var open=list().filter(function(c){return c.leadId===lid&&c.status!=='done'});var st=open.length?TABS[open[0].status]:'';
+    return'<button class="lrow" data-lead="'+esc(lid)+'"><span><b>'+esc(l.name)+'</b><small>'+esc(l.company||'')+(last(lid)?' · last activity '+esc(fmtDay(last(lid))):'')+'</small></span>'+(st?'<span class="chip">'+esc(st)+'</span>':'')+'</button>'}).join(''):'<div class="empty">No leads match.</div>';
+  return h;
+}
+
+function render(){
+  var active=document.activeElement;
+  if(active&&active.closest&&active.closest('.edit'))return; // never redraw under someone who is typing
+  var all=list(),counts={todo:0,waiting:0};
+  all.forEach(function(c){if((owner==='All'||c.owner===owner)&&counts[c.status]!=null)counts[c.status]++});
+  var h='<div class="bar">';
+  ['todo','waiting','archive','leads'].forEach(function(s){h+='<button class="tab" data-view="'+s+'" aria-pressed="'+(view===s)+'">'+TABS[s]+(counts[s]!=null?'<span class="n">'+counts[s]+'</span>':'')+'</button>'});
+  h+='<span class="spacer"></span>';
+  if(view!=='leads')['All','Tom','Evan'].forEach(function(o){h+='<button class="who" data-owner="'+o+'" aria-pressed="'+(owner===o)+'">'+o+'</button>'});
+  h+='<button class="add" data-a="new">+ Add</button></div><div id="status"></div>';
+  if(view==='leads')h+=openLead?leadView(openLead):leadsView();
+  else if(view==='archive')h+=archiveView();
+  else{
+    var shown=all.filter(function(c){return c.status===view&&(owner==='All'||c.owner===owner)});
+    shown.sort(function(a,b){return(a.due||'9999').localeCompare(b.due||'9999')||String(a.lead).localeCompare(String(b.lead))});
+    h+=shown.length?shown.map(cardHtml).join(''):'<div class="empty">'+(loadedOnce?'Nothing here.':'Loading…')+'</div>';
+  }
+  var st=document.getElementById('status');var stText=st?st.textContent:'';var stErr=st&&st.className==='err';
+  var lq=document.getElementById('lq');var lqFocus=lq&&active===lq;
+  app.innerHTML=h;setStatus(stText,stErr);
+  if(lqFocus){var n=document.getElementById('lq');n.focus();n.setSelectionRange(n.value.length,n.value.length)}
+}
+
+function collect(art,attr){var d={};art.querySelectorAll('['+attr+']').forEach(function(el){d[el.getAttribute(attr)]=el.value});return d}
+function blur(){if(document.activeElement)document.activeElement.blur()}
+
+app.addEventListener('input',function(ev){if(ev.target.id==='lq'){leadQuery=ev.target.value;render()}});
+app.addEventListener('click',function(ev){
+  var lk=ev.target.closest('[data-lead]');
+  if(lk&&!ev.target.closest('.edit')){view='leads';openLead=lk.dataset.lead;adding=null;store('fu-view',view);window.scrollTo(0,0);return render()}
+  var b=ev.target.closest('button');if(!b)return;
+  if(b.dataset.view){view=b.dataset.view;openLead=null;adding=null;store('fu-view',view);return render()}
+  if(b.dataset.owner){owner=b.dataset.owner;store('fu-owner',owner);return render()}
+  var a=b.dataset.a;if(!a)return;
+  if(a==='back'){openLead=null;adding=null;return render()}
+  if(a==='newev'){adding={lid:b.dataset.l,dir:'in'};render();var t=app.querySelector('[data-g="text"]');if(t)t.focus();return}
+  if(a==='cancelev'){adding=null;blur();return render()}
+  if(a==='addev'){
+    var form=b.closest('.card');var d=collect(form,'data-g');if(!d.text.trim()){setStatus('Write or paste something first.',true);return}
+    setStatus('Saving…');
+    addHistory(b.dataset.l,{date:d.date||today(),dir:d.dir,channel:d.channel,by:d.dir==='in'?leadName(b.dataset.l).split(' ')[0]:who(),subject:d.subject,text:d.text,exact:true})
+      .then(function(){adding=null;blur();setStatus('Added to the history.');render()}).catch(function(e){setStatus('Not saved ('+e.message+'). Try again.',true)});
+    return;
+  }
+  if(a==='new'){
+    var id='c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    var c={id:id,lead:'',company:'',leadId:openLead||'',owner:meSel.value||'Tom',channel:'Email',to:'',cc:'',subject:'',body:'',note:'',status:'todo',due:today(),links:[],log:[]};
+    if(openLead){c.lead=leadName(openLead);c.company=(leads[openLead]||{}).company||''}
+    cards[id]=c;editing[id]={base:0,draft:JSON.parse(JSON.stringify(c)),isNew:true};view='todo';openLead=null;render();
+    var el=app.querySelector('[data-id="'+id+'"] [data-f="'+(c.lead?'body':'lead')+'"]');if(el)el.focus();return;
+  }
+  var art=b.closest('.card');var id=art&&art.dataset.id;var c=cards[id];if(!c)return;
+  if(a==='copybody')return copy(c.body,b);
+  if(a==='copysubj')return copy(c.subject,b);
+  if(a==='edit'){editing[id]={base:c.rev||0,draft:JSON.parse(JSON.stringify(c))};return render()}
+  if(a==='cancel'){if(editing[id]&&editing[id].isNew)delete cards[id];delete editing[id];delete conflicts[id];blur();return render()}
+  if(a==='save'||a==='keepmine'){
+    var d=Object.assign(editing[id].draft,collect(art,'data-f'));var base=editing[id].base,isNew=editing[id].isNew,force=a==='keepmine';
+    if(!d.lead.trim()){setStatus('Add a lead name first.',true);return}
+    setStatus('Saving…');
+    (d.leadId?Promise.resolve(d.leadId):ensureLead(d.lead.trim(),d.company)).then(function(lid){
+      d.leadId=lid;
+      return saveCard(id,function(cur){
+        if(!isNew&&!cur)return false;
+        if(cur&&!force&&(cur.rev||0)!==base){conflicts[id]=cur;throw new Error('conflict')}
+        var next=cur||{id:id,status:'todo',links:[],log:[]};
+        ['lead','company','leadId','owner','due','channel','to','cc','subject','body','note'].forEach(function(f){next[f]=d[f]||''});
+        addLog(next,isNew?'added this card':'edited this card');return next;
+      });
+    }).then(function(r){
+      if(r===false){setStatus('That card was deleted.',true);delete editing[id];blur();return load(true)}
+      delete editing[id];delete conflicts[id];blur();setStatus('Saved.');render();
+    }).catch(function(e){if(e.message==='conflict'){setStatus('');blur();render();return}setStatus('Not saved ('+e.message+'). Your text is still here; try again.',true)});
+    return;
+  }
+  if(a==='usesaved'){cards[id]=conflicts[id];delete conflicts[id];delete editing[id];blur();return render()}
+  if(!meSel.value&&!confirm('Pick who you are at the top first, so we can see who did what. Continue anyway?'))return;
+  act(id,a);
+});
+
+load();
+setInterval(function(){if(!document.hidden&&!busy())load(true)},30000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&!busy())load(true)});
+})();
+</script>
+</body>
+</html>
