@@ -47,7 +47,10 @@ h1 span{color:var(--o)}
 .tab[aria-pressed=true]{background:var(--c);border-color:var(--c);color:#fff}
 .tab[aria-pressed=true] .ic{background:rgba(255,255,255,.18);color:#fff}
 .tab[aria-pressed=true] .n,.tab[aria-pressed=true] .d{color:rgba(255,255,255,.88)}
-.tab.todo{--c:var(--o);--cb:var(--o-dim)}.tab.waiting{--c:var(--amber);--cb:var(--amber-bg)}.tab.docs{--c:var(--blue);--cb:var(--blue-bg)}.tab.archive{--c:var(--green);--cb:var(--green-bg)}.tab.leads{--c:#2B2B2B;--cb:var(--surface2)}
+.tab.todo{--c:var(--o);--cb:var(--o-dim)}.tab.waiting{--c:var(--amber);--cb:var(--amber-bg)}.tab.docs{--c:var(--blue);--cb:var(--blue-bg)}.tab.archive{--c:var(--green);--cb:var(--green-bg)}.tab.leads{--c:#2B2B2B;--cb:var(--surface2)}.tab.tasks{--c:#6B4FA0;--cb:#F3EFF9}
+.task .ttl{font-weight:700;font-size:1rem}
+.task.isdone .ttl{text-decoration:line-through;color:var(--txt3)}
+.donelist summary{cursor:pointer;color:var(--txt2);font-size:.9rem;padding:8px 0}
 .subbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .spacer{flex:1}
 .who{font:inherit;font-size:.85rem;border:1px solid var(--border);background:transparent;color:var(--txt2);padding:5px 10px;border-radius:999px;cursor:pointer}
@@ -149,11 +152,11 @@ var DB='https://talex-media-default-rtdb.firebaseio.com/drafts/';
 var KEY=(location.hash.match(/k=([a-z0-9-]{6,80})/)||[])[1]||'';
 var app=document.getElementById('app');
 var meSel=document.getElementById('me');
-var TABS={todo:'To send',waiting:'Waiting on reply',docs:'Docs to review',archive:'Archive',leads:'Leads'};
-var TABDESC={todo:'Drafts ready to go out',waiting:'Sent, check back later',docs:'Needs a look first',archive:'Sent and closed',leads:'Every conversation'};
+var TABS={todo:'To send',waiting:'Waiting on reply',tasks:'Tasks',docs:'Docs to review',archive:'Archive',leads:'Leads'};
+var TABDESC={tasks:'Things to get done',todo:'Drafts ready to go out',waiting:'Sent, check back later',docs:'Needs a look first',archive:'Sent and closed',leads:'Every conversation'};
 var SV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">';
-var TABICON={todo:SV+'<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>',waiting:SV+'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',docs:SV+'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>',archive:SV+'<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/></svg>',leads:SV+'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 20a6.5 6.5 0 0 0-3-5.5"/></svg>'};
-var cards={},leads={},docs={},editingDoc={},view='todo',owner='All',openLead=null,convFilter='All',leadQuery='',editing={},conflicts={},flagging={},adding=null,loadedOnce=false;
+var TABICON={tasks:SV+'<rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg>',todo:SV+'<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>',waiting:SV+'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',docs:SV+'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>',archive:SV+'<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/></svg>',leads:SV+'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 20a6.5 6.5 0 0 0-3-5.5"/></svg>'};
+var cards={},leads={},docs={},tasks={},editingTask={},editingDoc={},view='todo',owner='All',openLead=null,convFilter='All',leadQuery='',editing={},conflicts={},flagging={},adding=null,loadedOnce=false;
 
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 meSel.value=store('fu-me')||'';
@@ -178,11 +181,11 @@ function hist(lid){var h=(leads[lid]&&leads[lid].history)||{};return Object.keys
 function hasNewReply(c){var l=c.leadId&&leads[c.leadId];return!!(l&&l.lastInboundAt&&c.status!=='done'&&c.sentAt&&l.lastInboundAt>c.sentAt)}
 function chanOf(e){return e.dir==='call'||e.channel==='Call'?'Call':e.channel==='LinkedIn'?'LinkedIn':e.channel==='Email'?'Email':'Other'}
 function leadName(lid){return(leads[lid]&&leads[lid].name)||lid}
-function busy(){return Object.keys(editing).length||Object.keys(editingDoc).length||Object.keys(flagging).length||adding}
+function busy(){return Object.keys(editing).length||Object.keys(editingDoc).length||Object.keys(editingTask).length||Object.keys(flagging).length||adding}
 
 function load(quiet){
   return fetch(ROOT+'.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(v){
-    v=v||{};cards=v.cards||{};leads=v.leads||{};docs=v.docs||{};loadedOnce=true;render();
+    v=v||{};cards=v.cards||{};leads=v.leads||{};docs=v.docs||{};tasks=v.tasks||{};loadedOnce=true;render();
     if(!quiet)setStatus('Up to date '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}));
   }).catch(function(e){setStatus('Could not load the board ('+e.message+'). Check your connection and refresh.',true);if(!loadedOnce)render()});
 }
@@ -202,7 +205,7 @@ function saveItem(coll,id,mutate,tries){
     next.rev=((x.cur&&x.cur.rev)||0)+1;next.updatedAt=Date.now();
     return fetch(url,{method:'PUT',cache:'no-store',headers:{'if-match':x.etag,'Content-Type':'application/json'},body:JSON.stringify(next)}).then(function(r){
       if(r.status===412&&tries<2)return saveItem(coll,id,mutate,tries+1);
-      if(!r.ok)throw new Error('HTTP '+r.status);(coll==='docs'?docs:cards)[id]=next;return next;
+      if(!r.ok)throw new Error('HTTP '+r.status);({docs:docs,tasks:tasks,cards:cards})[coll][id]=next;return next;
     });
   });
 }
@@ -435,21 +438,81 @@ function docAct(id,a,art){
   }).then(function(){setStatus(via?'Shared. It is in the history, and the link sheet updates on its own.':'Saved.');render()}).catch(function(err){setStatus('Not saved ('+err.message+'). Try again.',true)});
 }
 
+function taskList(){return Object.keys(tasks).map(function(k){return tasks[k]}).filter(Boolean)}
+function taskHtml(t){
+  var td=today(),open=t.status!=='done';
+  var cls='card task'+(open?'':' isdone')+(open&&t.due&&t.due<td?' overdue':(open&&t.due===td?' today':''));
+  var h='<article class="'+cls+'" data-task="'+esc(t.id)+'"><div class="top"><div class="lead"><span class="ttl">'+esc(t.title||'Untitled task')+'</span>'+(t.leadId?' <span class="co">· '+leadLink(t.leadId,leadName(t.leadId))+'</span>':'')+'</div><div class="chips">'+ownerChip(t.owner);
+  if(open&&t.due)h+=dueChip({status:'todo',due:t.due});
+  if(!open)h+='<span class="chip sent">Done '+esc(fmtWhen(t.doneAt))+(t.doneBy?' by '+esc(t.doneBy):'')+'</span>';
+  h+='</div></div>';
+  if(editingTask[t.id]){
+    var e=editingTask[t.id];
+    var opts='<option value="">(no lead)</option>'+Object.keys(leads).sort(function(a,b){return leadName(a).localeCompare(leadName(b))}).map(function(l){return'<option value="'+esc(l)+'"'+(e.leadId===l?' selected':'')+'>'+esc(leadName(l))+'</option>'}).join('');
+    h+='<div class="edit"><label>Task</label><input data-t="title" value="'+esc(e.title)+'">';
+    h+='<div class="row"><div><label>Who</label><select data-t="owner">'+['Tom','Evan','Claude'].map(function(o){return'<option'+(e.owner===o?' selected':'')+'>'+o+'</option>'}).join('')+'</select></div><div><label>Due</label><input type="date" data-t="due" value="'+esc(e.due)+'"></div></div>';
+    h+='<label>Lead (optional)</label><select data-t="leadId">'+opts+'</select><label>Notes</label><textarea data-t="notes" style="min-height:90px">'+esc(e.notes)+'</textarea></div>';
+    h+='<div class="actions"><button class="btn primary" data-ta="save">Save</button><button class="btn" data-ta="cancel">Cancel</button></div>';
+  }else{
+    if(t.notes)h+='<div class="note">'+linkify(t.notes)+'</div>';
+    h+='<div class="actions">'+(open?'<button class="btn go" data-ta="done">Done</button>':'<button class="btn" data-ta="undo">Not done</button>')+'<button class="btn" data-ta="edit">Edit</button>';
+    if(t.leadId)h+='<button class="btn link" data-lead="'+esc(t.leadId)+'">History</button>';
+    h+='</div>';
+  }
+  var last=(t.log||[]).slice(-1)[0];
+  if(last)h+='<div class="log">Last: '+esc(last.by)+' '+esc(last.what)+', '+esc(fmtWhen(last.at))+'</div>';
+  return h+'</article>';
+}
+function tasksView(){
+  var mine=taskList().filter(function(t){return owner==='All'||t.owner===owner});
+  var open=mine.filter(function(t){return t.status!=='done'}).sort(function(a,b){return(a.due||'9999').localeCompare(b.due||'9999')||String(a.title).localeCompare(String(b.title))});
+  var done=mine.filter(function(t){return t.status==='done'}).sort(function(a,b){return(b.doneAt||0)-(a.doneAt||0)});
+  var h='<div class="note" style="padding:12px 0 0">Jobs to get done that are not a message to send. Tap + Add to make one.</div>';
+  h+=open.length?open.map(taskHtml).join(''):'<div class="empty">'+(loadedOnce?'Nothing to do.':'Loading…')+'</div>';
+  if(done.length)h+='<details class="donelist"><summary>Done ('+done.length+')</summary>'+done.slice(0,30).map(taskHtml).join('')+'</details>';
+  return h;
+}
+function taskAct(id,a,art){
+  var t=tasks[id];if(!t)return;
+  if(a==='edit'){editingTask[id]=JSON.parse(JSON.stringify(t));return render()}
+  if(a==='cancel'){if(editingTask[id]&&editingTask[id]._new)delete tasks[id];delete editingTask[id];blur();return render()}
+  if(a==='save'){
+    var e=Object.assign(editingTask[id],collect(art,'data-t'));if(!e.title.trim()){setStatus('Write the task first.',true);return}
+    setStatus('Saving…');
+    saveItem('tasks',id,function(cur){
+      var next=cur||{id:id,status:'open',log:[]};
+      ['title','owner','due','notes','leadId'].forEach(function(f){next[f]=e[f]||''});
+      addLog(next,e._new?'added this task':'edited this task');return next;
+    }).then(function(){delete editingTask[id];blur();setStatus('Saved.');render()}).catch(function(err){setStatus('Not saved ('+err.message+'). Try again.',true)});
+    return;
+  }
+  if(!meSel.value&&!confirm('Pick who you are at the top first, so we can see who did what. Continue anyway?'))return;
+  setStatus('Saving…');
+  saveItem('tasks',id,function(cur){
+    if(!cur)return false;
+    if(a==='done'){cur.status='done';cur.doneAt=Date.now();cur.doneBy=who();addLog(cur,'marked it done')}
+    if(a==='undo'){cur.status='open';cur.doneAt=null;cur.doneBy=null;addLog(cur,'reopened it')}
+    return cur;
+  }).then(function(r){setStatus(r===false?'That task was deleted.':a==='done'?'Done. It is under Done at the bottom.':'Reopened.',r===false);render()}).catch(function(err){setStatus('Not saved ('+err.message+'). Try again.',true)});
+}
+
 function render(){
   var active=document.activeElement;
   if(active&&active.closest&&active.closest('.edit'))return; // never redraw under someone who is typing
-  var all=list(),counts={todo:0,waiting:0,docs:0};
+  var all=list(),counts={todo:0,waiting:0,docs:0,tasks:0};
+  taskList().forEach(function(t){if(t.status!=='done'&&(owner==='All'||t.owner===owner))counts.tasks++});
   all.forEach(function(c){if((owner==='All'||c.owner===owner)&&counts[c.status]!=null)counts[c.status]++});
   docList().forEach(function(d){if(d.status!=='shared'&&(owner==='All'||d.owner===owner))counts.docs++});
   counts.leads=Object.keys(leads).length;
   var h='<div class="bar"><div class="tabs" id="tabs">';
-  ['todo','waiting','docs','archive','leads'].forEach(function(s){h+='<button class="tab '+s+'" data-view="'+s+'" aria-pressed="'+(view===s)+'"><span class="ic">'+TABICON[s]+'</span><span class="t">'+TABS[s]+(counts[s]!=null?'<span class="n">'+counts[s]+'</span>':'')+'</span><span class="d">'+TABDESC[s]+'</span></button>'});
+  ['todo','waiting','tasks','docs','archive','leads'].forEach(function(s){h+='<button class="tab '+s+'" data-view="'+s+'" aria-pressed="'+(view===s)+'"><span class="ic">'+TABICON[s]+'</span><span class="t">'+TABS[s]+(counts[s]!=null?'<span class="n">'+counts[s]+'</span>':'')+'</span><span class="d">'+TABDESC[s]+'</span></button>'});
   h+='</div><div class="subbar"><span class="spacer"></span>';
   if(view!=='leads')['All','Tom','Evan'].forEach(function(o){h+='<button class="who" data-owner="'+o+'" aria-pressed="'+(owner===o)+'">'+o+'</button>'});
   h+='<button class="add" data-a="new">+ Add</button></div></div><div id="status"></div>';
   if(view==='leads')h+=openLead?leadView(openLead):leadsView();
   else if(view==='archive')h+=archiveView();
   else if(view==='docs')h+=docsView();
+  else if(view==='tasks')h+=tasksView();
   else{
     var shown=all.filter(function(c){return c.status===view&&(owner==='All'||c.owner===owner)});
     shown.sort(function(a,b){return(a.due||'9999').localeCompare(b.due||'9999')||String(a.lead).localeCompare(String(b.lead))});
@@ -476,8 +539,15 @@ app.addEventListener('click',function(ev){
   if(b.dataset.cf){convFilter=b.dataset.cf;return render()}
   if(b.dataset.owner){owner=b.dataset.owner;store('fu-owner',owner);return render()}
   if(b.dataset.da){var dart=b.closest('.doc');return docAct(dart.dataset.doc,b.dataset.da,dart)}
+  if(b.dataset.ta){var tart=b.closest('.task');return taskAct(tart.dataset.task,b.dataset.ta,tart)}
   if(b.dataset.why){var tw=b.closest('.card').querySelector('[data-x="why"]');tw.value=(tw.value.trim()?tw.value.trim()+'. ':'')+b.dataset.why+': ';tw.focus();tw.setSelectionRange(tw.value.length,tw.value.length);return}
   var a=b.dataset.a;if(!a)return;
+  if(a==='new'&&view==='tasks'){
+    var tid='t'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    tasks[tid]={id:tid,title:'',owner:meSel.value||'Evan',due:today(),notes:'',leadId:'',status:'open',log:[]};
+    editingTask[tid]=JSON.parse(JSON.stringify(tasks[tid]));editingTask[tid]._new=true;render();
+    var tf=app.querySelector('[data-task="'+tid+'"] [data-t="title"]');if(tf)tf.focus();return;
+  }
   if(a==='new'&&view==='docs'){
     var did='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
     docs[did]={id:did,company:'',lead:'',leadId:'',type:'Strategy doc',owner:'Tom',link:'',due:today(),ask:'',status:'review',log:[]};
