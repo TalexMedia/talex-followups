@@ -280,8 +280,8 @@ function cardHtml(c){
     h+='<div class="edit"><div class="row"><div><label>Lead</label><input data-f="lead" value="'+esc(e.lead)+'"></div><div><label>Company</label><input data-f="company" value="'+esc(e.company)+'"></div></div>';
     h+='<label>Conversation history</label><select data-f="leadId">'+opts+'</select>';
     h+='<div class="row"><div><label>Owner</label><select data-f="owner">'+['Tom','Evan'].map(function(o){return'<option'+(e.owner===o?' selected':'')+'>'+o+'</option>'}).join('')+'</select></div><div><label>'+(e.status==='waiting'?'Check again on':'Due')+'</label><input type="date" data-f="due" value="'+esc(e.due)+'"></div></div>';
-    h+='<div class="row"><div><label>Channel</label><select data-f="channel">'+['Email','LinkedIn','WhatsApp','Other'].map(function(o){return'<option'+(e.channel===o?' selected':'')+'>'+o+'</option>'}).join('')+'</select></div><div><label>To</label><input data-f="to" value="'+esc(e.to)+'"></div></div>';
-    h+='<div class="row"><div><label>Cc</label><input data-f="cc" value="'+esc(e.cc)+'"></div><div><label>Subject</label><input data-f="subject" value="'+esc(e.subject)+'"></div></div>';
+    h+='<div class="row"><div><label>To</label><input data-f="to" value="'+esc(e.to)+'"></div><div><label>Cc</label><input data-f="cc" value="'+esc(e.cc)+'"></div></div>';
+    h+='<label>Subject</label><input data-f="subject" value="'+esc(e.subject)+'">';
     h+='<label>Message</label><textarea data-f="body">'+esc(e.body)+'</textarea><label>Note</label><input data-f="note" value="'+esc(e.note)+'"></div>';
     h+='<div class="actions"><button class="btn primary" data-a="save">Save</button><button class="btn" data-a="cancel">Cancel</button></div>';
   }else if(flagging[c.id]!=null){
@@ -590,7 +590,7 @@ app.addEventListener('click',function(ev){
         if(!isNew&&!cur)return false;
         if(cur&&!force&&(cur.rev||0)!==base){conflicts[id]=cur;throw new Error('conflict')}
         var next=cur||{id:id,status:'todo',links:[],log:[]};
-        ['lead','company','leadId','owner','due','channel','to','cc','subject','body','note'].forEach(function(f){next[f]=d[f]||''});
+        ['lead','company','leadId','owner','due','to','cc','subject','body','note'].forEach(function(f){next[f]=d[f]||''});next.channel='Email'; // the board holds email only (Evan, 3 Nov)
         if(!isNew)next.flag=null;
         addLog(next,isNew?'added this card':'edited this card');return next;
       });
