@@ -200,7 +200,7 @@ function load(quiet){
   return fetch(ROOT+'.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(v){
     v=v||{};cards=v.cards||{};leads=v.leads||{};docs=v.docs||{};tasks=v.tasks||{};suggestions=v.suggestions||{};loadedOnce=true;render();
     if(!quiet)setStatus('Up to date '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}));
-    surfaceReplies();expireWaiting();
+    surfaceReplies();expireWaiting();sendTasks();
   }).catch(function(e){setStatus('Could not load the board ('+e.message+'). Check your connection and refresh.',true);if(!loadedOnce)render()});
 }
 
@@ -242,6 +242,25 @@ function expireWaiting(){
     });
   }).catch(function(){})});
   chain.then(function(){expiring=false;if(moved){setStatus(moved+(moved===1?' item':' items')+' came back from Waiting on reply: the check date has passed.');render()}});
+}
+// A doc marked ready to send becomes a send task by itself (Evan, 6 Nov: "it
+// should be automatic"). Sharing the doc closes that task. push.py doctasks
+// does the same from the hourly check, so it happens with no page open too.
+function sendTaskOf(d){
+  var lead=d.lead||'the lead',ty=(d.type||'doc').toLowerCase();
+  return{id:'send-'+d.id,title:'Send the '+(d.company||'')+' '+ty+' to '+lead,owner:d.sender||'Evan',due:d.sendBy||today(),leadId:d.leadId||'',docId:d.id,status:'open',
+    notes:'Tom marked the '+ty+' ready to send. Before it goes out, Claude bakes in any edits saved on the link and switches editing off: tell Claude to go. Then send it to '+lead+' and tap Shared on the doc in Docs to review, which closes this task.\n\n'+(d.link||''),
+    log:[{at:Date.now(),by:'Board',what:'added this task: the doc was marked ready to send'}]};
+}
+function sendTasks(){
+  docList().forEach(function(d){
+    var tid='send-'+d.id,t=tasks[tid];
+    if(d.status==='ready'&&!t)saveItem('tasks',tid,function(cur){return cur?false:sendTaskOf(d)}).then(function(r){if(r)render()}).catch(function(){});
+    if(d.status==='shared'&&t&&t.status!=='done')saveItem('tasks',tid,function(cur){
+      if(!cur||cur.status==='done')return false;
+      cur.status='done';cur.doneAt=d.sharedAt||Date.now();cur.doneBy=d.sharedBy||'';boardLog(cur,'closed it: the doc was shared');return cur;
+    }).then(function(r){if(r)render()}).catch(function(){});
+  });
 }
 function put(path,val){return fetch(ROOT+path+'.json',{method:'PUT',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(val)}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return val})}
 
@@ -496,7 +515,7 @@ function docAct(id,a,art){
     return cur;
   }).then(function(r){
     if(r&&via&&r.leadId)return addHistory(r.leadId,{date:today(),dir:'out',channel:via,by:who(),subject:(r.type||'Doc')+' shared',text:'Shared the '+(r.type||'doc').toLowerCase()+': '+(r.link||''),exact:true,docId:id});
-  }).then(function(){setStatus(via?'Shared. It is in the history, and the link sheet updates on its own.':'Saved.');render()}).catch(function(err){setStatus('Not saved ('+err.message+'). Try again.',true)});
+  }).then(function(){sendTasks();setStatus(via?'Shared. It is in the history, and the link sheet updates on its own.':a==='ready'?'Saved. A send task is now in Tasks.':'Saved.');render()}).catch(function(err){setStatus('Not saved ('+err.message+'). Try again.',true)});
 }
 
 function taskList(){return Object.keys(tasks).map(function(k){return tasks[k]}).filter(Boolean)}
