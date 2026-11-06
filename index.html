@@ -133,6 +133,9 @@ h2{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:1.4rem;letter-s
 .ch.LinkedIn{color:#fff;background:#0A66C2;border-color:#0A66C2}
 .ch.Call{color:var(--green);border-color:var(--green-border);background:#fff}
 .chip.newreply{border-color:#0A66C2;color:#fff;background:#0A66C2}
+.replybox{margin:4px 16px 10px;border-left:3px solid #0A66C2;background:#EEF4FB;border-radius:0 8px 8px 0;padding:8px 0 2px}
+.replybox .rh{font-size:.82rem;font-weight:700;color:#0A66C2;padding:0 14px}
+.replybox .msg{margin:6px 14px 8px;background:#fff}
 .chip.flag{border-color:var(--red-border);color:var(--red);background:var(--red-bg)}
 .flagwhy{margin:0 16px 10px;padding:8px 12px;border-left:3px solid var(--red);background:var(--red-bg);font-size:.9rem}
 .cf{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
@@ -182,6 +185,12 @@ function slug(s){return String(s||'').toLowerCase().normalize('NFKD').replace(/[
 function setStatus(t,err){var s=document.getElementById('status');if(s){s.textContent=t||'';s.className=err?'err':''}}
 function list(){return Object.keys(cards).map(function(k){return cards[k]}).filter(Boolean)}
 function hist(lid){var h=(leads[lid]&&leads[lid].history)||{};return Object.keys(h).map(function(k){var e=h[k];e._id=k;return e}).filter(Boolean).sort(function(a,b){return(a.date||'').localeCompare(b.date||'')||(a.at||0)-(b.at||0)})}
+function replyOf(c){
+  var l=c.leadId&&leads[c.leadId];var after=c.sentAt||(c.lastSent&&c.lastSent.at)||0;if(!l||!after)return null;
+  var r=hist(c.leadId).filter(function(e){return e.dir==='in'&&(e.at||0)>after}).pop();if(!r)return null;
+  var t=String(r.text||'').split(/\n\s*(?:From: |-{2,}\s*Original Message|On .{0,300}wrote:)/)[0].replace(/\n{3,}/g,'\n\n').trim();
+  return{e:r,text:t.length>1200?t.slice(0,1200)+'…':t};
+}
 function hasNewReply(c){var l=c.leadId&&leads[c.leadId];return!!(l&&l.lastInboundAt&&c.status!=='done'&&c.sentAt&&l.lastInboundAt>c.sentAt)}
 function chanOf(e){return e.dir==='call'||e.channel==='Call'?'Call':e.channel==='LinkedIn'?'LinkedIn':e.channel==='Email'?'Email':'Other'}
 function leadName(lid){return(leads[lid]&&leads[lid].name)||lid}
@@ -191,7 +200,7 @@ function load(quiet){
   return fetch(ROOT+'.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(v){
     v=v||{};cards=v.cards||{};leads=v.leads||{};docs=v.docs||{};tasks=v.tasks||{};suggestions=v.suggestions||{};loadedOnce=true;render();
     if(!quiet)setStatus('Up to date '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}));
-    expireWaiting();
+    surfaceReplies();expireWaiting();
   }).catch(function(e){setStatus('Could not load the board ('+e.message+'). Check your connection and refresh.',true);if(!loadedOnce)render()});
 }
 
@@ -204,15 +213,23 @@ var expiring=false;
 function inDays(n){return isoOf(Date.now()+n*864e5)}
 function boardLog(c,what){c.log=(c.log||[]).concat([{at:Date.now(),by:'Board',what:what}]).slice(-12)}
 function lastSentOf(c){return{at:c.sentAt||0,channel:c.channel||'',subject:c.subject||'',body:c.body||''}}
+function surfaceReplies(){
+  var back=list().filter(function(c){return c.status==='waiting'&&hasNewReply(c)});
+  back.forEach(function(c0){saveCard(c0.id,function(c){
+    if(!c||c.status!=='waiting')return false;
+    c.lastSent=lastSentOf(c);c.status='todo';c.replied=true;c.followup=null;c.body='';c.due=today();
+    boardLog(c,'moved to Not sent yet: '+(c.lead||'they').split(' ')[0]+' replied');return c;
+  }).then(function(r){if(r)render()}).catch(function(){})});
+}
 function expireWaiting(){
   if(expiring)return;var t=today();
-  var due=list().filter(function(c){return c.status==='waiting'&&c.due&&c.due<=t});
+  var due=list().filter(function(c){return c.status==='waiting'&&c.due&&c.due<=t&&!hasNewReply(c)}); // a reply is not a follow-up
   if(!due.length)return;expiring=true;
   var chain=Promise.resolve(),moved=0;
   due.forEach(function(c0){chain=chain.then(function(){
     var isEmail=(c0.channel||'Email')==='Email',snap=null;
     return saveCard(c0.id,function(c){
-      if(!c||c.status!=='waiting'||!c.due||c.due>t)return false;
+      if(!c||c.status!=='waiting'||!c.due||c.due>t||hasNewReply(c))return false;
       snap=JSON.parse(JSON.stringify(c));
       if(isEmail){c.lastSent=lastSentOf(c);c.status='todo';c.followup=true;c.body='';c.due=t;boardLog(c,'moved to Not sent yet: no reply by the check date')}
       else{c.status='done';boardLog(c,'moved to Tasks: no reply by the check date')}
@@ -262,7 +279,7 @@ function act(id,kind){
   var before=cards[id];setStatus('Saving…');
   saveCard(id,function(c){
     if(!c)return false;
-    if(kind==='sent'){c.status='waiting';c.sentAt=Date.now();c.sentBy=who();c.flag=null;c.followup=null;c.due=inDays(7)} // check again in a week; editable on the card
+    if(kind==='sent'){c.status='waiting';c.sentAt=Date.now();c.sentBy=who();c.flag=null;c.followup=null;c.replied=null;c.due=inDays(7)} // check again in a week; editable on the card
     if(kind==='reply'||kind==='dismiss'||kind==='close')c.status='done';
     if(kind==='again'){c.lastSent=lastSentOf(c);c.followup=true;c.status='todo';c.body='';c.due=today()}
     if(kind==='reopen')c.status='todo';
@@ -303,12 +320,14 @@ function cardHtml(c){
   var h='<article class="'+cls+'" data-id="'+id+'"><div class="top"><div class="lead">'+leadLink(c.leadId,c.lead)+(c.company?' <span class="co">· '+esc(c.company)+'</span>':'')+leadSub(c.leadId)+'</div><div class="chips">';
   h+=ownerChip(c.owner);
   if(c.flag&&c.status==='todo')h+='<span class="chip flag">Needs a rewrite</span>';
-  if(c.followup&&c.status==='todo')h+='<span class="chip due-today">Follow-up due</span>';
-  if(hasNewReply(c))h+='<span class="chip newreply">New reply</span>';
+  var rp=c.status!=='done'?replyOf(c):null;
+  if(rp)h+='<span class="chip newreply">Reply needed</span>';
+  else if(c.followup&&c.status==='todo')h+='<span class="chip due-today">Follow-up due</span>';
   if(c.channel)h+='<span class="chip">'+esc(c.channel)+'</span>';
   if(c.sentAt&&c.status!=='todo')h+='<span class="chip sent">Sent '+esc(fmtWhen(c.sentAt))+'</span>';
   h+=dueChip(c)+'</div></div>';
   if(c.flag&&c.status==='todo')h+='<div class="flagwhy"><b>'+esc(c.flag.by)+':</b> '+linkify(c.flag.why)+'</div>';
+  if(rp)h+='<div class="replybox"><div class="rh">'+esc((rp.e.by||c.lead||'They'))+' replied '+esc(fmtWhen(rp.e.at))+(rp.e.subject?' · '+esc(rp.e.subject):'')+'</div><div class="msg">'+linkify(rp.text)+'</div></div>';
   if(c.note)h+='<div class="note">'+linkify(c.note)+'</div>';
   if(conflicts[c.id])h+='<div class="conflict">Someone else saved this card while you were editing. <button class="btn" data-a="keepmine">Keep mine</button> <button class="btn" data-a="usesaved">Use saved version</button></div>';
   if(editing[c.id]){
@@ -330,8 +349,8 @@ function cardHtml(c){
     if(c.cc)meta+='<div><b>Cc</b><span>'+esc(c.cc)+'</span></div>';
     if(c.subject)meta+='<div><b>Subject</b><span>'+esc(c.subject)+'</span></div>';
     if(meta)h+='<div class="meta">'+meta+'</div>';
-    h+=c.body?'<div class="msg">'+linkify(c.body)+'</div>':'<div class="nomsg">'+(c.followup?'No reply by the check date. Claude drafts the follow-up; you can also write it with Edit.':'No message drafted yet.')+'</div>';
-    if(c.followup&&c.lastSent&&c.lastSent.body)h+='<details class="lastsent"><summary>Last sent'+(c.lastSent.at?' '+esc(fmtWhen(c.lastSent.at)):'')+'</summary><div class="msg">'+linkify(c.lastSent.body)+'</div></details>';
+    h+=c.body?'<div class="msg">'+linkify(c.body)+'</div>':'<div class="nomsg">'+(rp?'They replied (above). Claude drafts the reply; you can also write it with Edit.':c.followup?'No reply by the check date. Claude drafts the follow-up; you can also write it with Edit.':'No message drafted yet.')+'</div>';
+    if((c.followup||rp)&&c.lastSent&&c.lastSent.body)h+='<details class="lastsent"><summary>Last sent'+(c.lastSent.at?' '+esc(fmtWhen(c.lastSent.at)):'')+'</summary><div class="msg">'+linkify(c.lastSent.body)+'</div></details>';
     if(c.links&&c.links.length)h+='<div class="links">'+c.links.map(function(l){return'<a href="'+esc(l.url)+'" target="_blank" rel="noopener">'+esc(l.label||l.url)+' ↗</a>'}).join('')+'</div>';
     h+='<div class="actions">';
     if(c.body)h+='<button class="btn primary" data-a="copybody">Copy message</button>';
