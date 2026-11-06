@@ -278,9 +278,25 @@ function saveItem(coll,id,mutate,tries){
     next.rev=((x.cur&&x.cur.rev)||0)+1;next.updatedAt=Date.now();
     return fetch(url,{method:'PUT',cache:'no-store',headers:{'if-match':x.etag,'Content-Type':'application/json'},body:JSON.stringify(next)}).then(function(r){
       if(r.status===412&&tries<2)return saveItem(coll,id,mutate,tries+1);
-      if(!r.ok)throw new Error('HTTP '+r.status);({docs:docs,tasks:tasks,cards:cards,suggestions:suggestions})[coll][id]=next;return next;
+      if(!r.ok)throw new Error('HTTP '+r.status);({docs:docs,tasks:tasks,cards:cards,suggestions:suggestions})[coll][id]=next;
+      var nl=(next.log||[]).slice(-1)[0],ol=x.cur&&(x.cur.log||[]).slice(-1)[0];
+      if(nl&&(!ol||nl.at!==ol.at||nl.what!==ol.what))logActivity(coll,id,next,nl);
+      return next;
     });
   });
+}
+// Every action on the board also goes to /activity, which is never trimmed (a
+// card keeps only its last 12 log lines). The hourly check reads it and tells
+// Evan what Tom did (Evan, 6 Nov: "capture is super important").
+function itemLabel(coll,x){
+  if(coll==='tasks')return x.title||'a task';
+  if(coll==='docs')return(x.company||'')+' '+(x.type||'doc').toLowerCase();
+  if(coll==='suggestions')return x.title||'a suggestion';
+  return(x.lead||'')+(x.company?' ('+x.company+')':'')+(x.subject?': '+x.subject:'');
+}
+function logActivity(coll,id,x,e){
+  fetch(ROOT+'/activity.json',{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({at:e.at||Date.now(),by:e.by||'',what:e.what||'',coll:coll,id:id,label:itemLabel(coll,x),status:x.status||'',notified:false})}).catch(function(){});
 }
 function addLog(c,what){c.log=(c.log||[]).concat([{at:Date.now(),by:who(),what:what}]).slice(-12)}
 // History entries get unique keys, so two people adding at once never collide.
@@ -613,7 +629,7 @@ function suggAct(id,a){
     if(x.kind==='task')step=step.then(function(){return saveItem('tasks',x.task.id,function(cur){if(cur)throw new Error('that task already exists');var t=JSON.parse(JSON.stringify(x.task));t.status='open';t.log=[];addLog(t,'added this task from a suggestion');return t})});
     if(x.kind==='cardUpdate')step=step.then(function(){return saveItem('cards',x.update.cardId,function(cur){if(!cur)throw new Error('that card is gone');Object.keys(x.update.fields||{}).forEach(function(f){cur[f]=x.update.fields[f]});if(cur.status==='done')cur.status='todo';cur.flag=null;addLog(cur,'changed it from a suggestion');return cur})});
   }
-  step.then(function(){return saveItem('suggestions',id,function(cur){if(!cur)return false;cur.status=a==='add'?'added':'dismissed';cur.by=who();cur.decidedAt=Date.now();return cur})})
+  step.then(function(){return saveItem('suggestions',id,function(cur){if(!cur)return false;cur.status=a==='add'?'added':'dismissed';cur.by=who();cur.decidedAt=Date.now();addLog(cur,a==='add'?'added the suggestion to the board':'dismissed the suggestion');return cur})})
     .then(function(){setStatus(a==='add'?'Added to the board.':'Dismissed. It stays on file under Decided.');render()})
     .catch(function(e){setStatus('Not saved ('+e.message+').',true)});
 }
