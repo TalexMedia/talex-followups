@@ -50,6 +50,7 @@ h1 span{color:var(--o)}
 .ttnrow .ttl{font-weight:700;font-size:1rem}.ttnrow.isdone .ttl{text-decoration:line-through;color:var(--txt3)}
 .ttnq{margin:0 16px 10px;padding:8px 12px;border-left:3px solid #8A5A1E;background:#F7EFE4;border-radius:0 8px 8px 0;font-size:.9rem;white-space:pre-wrap}
 .ttnf{padding:0 16px 6px;font-size:.9rem}.ttnf b{font-weight:600}
+.ttnd{margin:4px 16px 10px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--surface2)}.ttnd .dh{font-size:.78rem;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}.ttnd .dm{font-size:.85rem;margin:2px 0}.ttnd pre{white-space:pre-wrap;font:inherit;font-size:.9rem;margin:8px 0;line-height:1.5}.ttnd .actions{padding:0}
 .ttngroup{font-size:.8rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--txt2);margin:18px 0 4px}
 .sugg .from{font-size:.8rem;color:var(--txt3);padding:0 16px 6px}
 .sugg .kind{border-color:#9FD3CF;color:#0F7A78;background:#E8F5F4}
@@ -625,6 +626,13 @@ function ttnHtml(r){
     if(r.asked)h+='<div class="ttnf"><b>Asked for:</b> '+linkify(r.asked)+'</div>';
     if(r.email)h+='<div class="ttnf"><b>Email:</b> '+esc(r.email)+'</div>';
     if(r.next)h+='<div class="ttnf"><b>Next:</b> '+linkify(r.next)+'</div>';
+    (r.drafts||[]).forEach(function(d,i){
+      h+='<div class="ttnd"><div class="dh">Draft: '+esc(d.label||d.channel||'')+'</div>';
+      if(d.to)h+='<div class="dm"><b>To:</b> '+esc(d.to)+'</div>';
+      if(d.cc)h+='<div class="dm"><b>CC:</b> '+esc(d.cc)+'</div>';
+      if(d.subject)h+='<div class="dm"><b>Subject:</b> '+esc(d.subject)+'</div>';
+      h+='<pre>'+esc(d.body||'')+'</pre><div class="actions">'+(d.subject?'<button class="btn" data-xc="subject" data-i="'+i+'">Copy subject</button>':'')+'<button class="btn" data-xc="body" data-i="'+i+'">Copy message</button></div></div>';
+    });
     if(r.notes)h+='<div class="ttnf" style="color:var(--txt2)">'+linkify(r.notes)+'</div>';
     var dl=[];if(r.firstInMail)dl.push('InMailed '+fmtDay(r.firstInMail));if(r.replyDate)dl.push('replied '+fmtDay(r.replyDate));
     if(dl.length)h+='<div class="ttnf" style="color:var(--txt3);font-size:.8rem">'+esc(dl.join(' · '))+'</div>';
@@ -760,6 +768,7 @@ app.addEventListener('click',function(ev){
   if(b.dataset.cf){convFilter=b.dataset.cf;return render()}
   if(b.dataset.owner){owner=b.dataset.owner;store('fu-owner',owner);return render()}
   if(b.dataset.da){var dart=b.closest('.doc');return docAct(dart.dataset.doc,b.dataset.da,dart)}
+  if(b.dataset.xc){var cr=ttn[b.closest('.ttnrow').dataset.ttn];var cd=cr&&(cr.drafts||[])[+b.dataset.i];if(cd)copy(cd[b.dataset.xc]||'',b);return}
   if(b.dataset.xa){var xart=b.closest('.ttnrow');return ttnAct(xart.dataset.ttn,b.dataset.xa,xart)}
   if(b.dataset.ta){var tart=b.closest('.task');return taskAct(tart.dataset.task,b.dataset.ta,tart)}
   if(b.dataset.sa){return suggAct(b.closest('.sugg').dataset.sugg,b.dataset.sa)}
