@@ -46,7 +46,11 @@ h1 span{color:var(--o)}
 .tab[aria-pressed=true]{background:var(--c);border-color:var(--c);color:#fff}
 .tab[aria-pressed=true] .ic{background:rgba(255,255,255,.18);color:#fff}
 .tab[aria-pressed=true] .n{color:rgba(255,255,255,.88)}
-.tab.todo{--c:var(--o);--cb:var(--o-dim)}.tab.waiting{--c:var(--amber);--cb:var(--amber-bg)}.tab.docs{--c:var(--blue);--cb:var(--blue-bg)}.tab.archive{--c:var(--green);--cb:var(--green-bg)}.tab.leads{--c:#2B2B2B;--cb:var(--surface2)}.tab.tasks{--c:#6B4FA0;--cb:#F3EFF9}.tab.suggested{--c:#0F7A78;--cb:#E8F5F4}
+.tab.todo{--c:var(--o);--cb:var(--o-dim)}.tab.waiting{--c:var(--amber);--cb:var(--amber-bg)}.tab.docs{--c:var(--blue);--cb:var(--blue-bg)}.tab.archive{--c:var(--green);--cb:var(--green-bg)}.tab.leads{--c:#2B2B2B;--cb:var(--surface2)}.tab.tasks{--c:#6B4FA0;--cb:#F3EFF9}.tab.suggested{--c:#0F7A78;--cb:#E8F5F4}.tab.ttn{--c:#8A5A1E;--cb:#F7EFE4}
+.ttnrow .ttl{font-weight:700;font-size:1rem}.ttnrow.isdone .ttl{text-decoration:line-through;color:var(--txt3)}
+.ttnq{margin:0 16px 10px;padding:8px 12px;border-left:3px solid #8A5A1E;background:#F7EFE4;border-radius:0 8px 8px 0;font-size:.9rem;white-space:pre-wrap}
+.ttnf{padding:0 16px 6px;font-size:.9rem}.ttnf b{font-weight:600}
+.ttngroup{font-size:.8rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--txt2);margin:18px 0 4px}
 .sugg .from{font-size:.8rem;color:var(--txt3);padding:0 16px 6px}
 .sugg .kind{border-color:#9FD3CF;color:#0F7A78;background:#E8F5F4}
 .sugg .was{margin:6px 16px;padding:10px 14px;border:1px dashed var(--border-strong);border-radius:8px;color:var(--txt3);font-size:.88rem;white-space:pre-wrap}
@@ -160,10 +164,10 @@ var DB='https://talex-media-default-rtdb.firebaseio.com/drafts/';
 var KEY=(location.hash.match(/k=([a-z0-9-]{6,80})/)||[])[1]||'';
 var app=document.getElementById('app');
 var meSel=document.getElementById('me');
-var TABS={suggested:'Suggested',todo:'Not sent yet',waiting:'Waiting on reply',tasks:'Tasks',docs:'Docs to review',archive:'Archive',leads:'Leads'};
+var TABS={suggested:'Suggested',todo:'Not sent yet',waiting:'Waiting on reply',tasks:'Tasks',docs:'Docs to review',archive:'Archive',leads:'Leads',ttn:'TTN'};
 var SV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">';
-var TABICON={suggested:SV+'<path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3"/></svg>',tasks:SV+'<rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg>',todo:SV+'<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>',waiting:SV+'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',docs:SV+'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>',archive:SV+'<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/></svg>',leads:SV+'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 20a6.5 6.5 0 0 0-3-5.5"/></svg>'};
-var cards={},leads={},docs={},tasks={},suggestions={},editingTask={},editingDoc={},view='todo',owner='All',openLead=null,convFilter='All',leadQuery='',editing={},conflicts={},flagging={},adding=null,loadedOnce=false;
+var TABICON={ttn:SV+'<path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-5h6v5M9 10h.01M15 10h.01M12 10h.01"/></svg>',suggested:SV+'<path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3"/></svg>',tasks:SV+'<rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg>',todo:SV+'<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>',waiting:SV+'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',docs:SV+'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>',archive:SV+'<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/></svg>',leads:SV+'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 20a6.5 6.5 0 0 0-3-5.5"/></svg>'};
+var cards={},leads={},docs={},tasks={},suggestions={},ttn={},editingTtn={},editingTask={},editingDoc={},view='todo',owner='All',openLead=null,convFilter='All',leadQuery='',editing={},conflicts={},flagging={},adding=null,loadedOnce=false;
 
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 meSel.value=store('fu-me')||'';
@@ -194,11 +198,11 @@ function replyOf(c){
 function hasNewReply(c){var l=c.leadId&&leads[c.leadId];return!!(l&&l.lastInboundAt&&c.status!=='done'&&c.sentAt&&l.lastInboundAt>c.sentAt)}
 function chanOf(e){return e.dir==='call'||e.channel==='Call'?'Call':e.channel==='LinkedIn'?'LinkedIn':e.channel==='Email'?'Email':'Other'}
 function leadName(lid){return(leads[lid]&&leads[lid].name)||lid}
-function busy(){return Object.keys(editing).length||Object.keys(editingDoc).length||Object.keys(editingTask).length||Object.keys(flagging).length||adding}
+function busy(){return Object.keys(editing).length||Object.keys(editingDoc).length||Object.keys(editingTask).length||Object.keys(editingTtn).length||Object.keys(flagging).length||adding}
 
 function load(quiet){
   return fetch(ROOT+'.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(v){
-    v=v||{};cards=v.cards||{};leads=v.leads||{};docs=v.docs||{};tasks=v.tasks||{};suggestions=v.suggestions||{};loadedOnce=true;render();
+    v=v||{};cards=v.cards||{};leads=v.leads||{};docs=v.docs||{};tasks=v.tasks||{};suggestions=v.suggestions||{};ttn=v.ttn||{};loadedOnce=true;render();
     if(!quiet)setStatus('Up to date '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}));
     surfaceReplies();expireWaiting();sendTasks();
   }).catch(function(e){setStatus('Could not load the board ('+e.message+'). Check your connection and refresh.',true);if(!loadedOnce)render()});
@@ -278,7 +282,7 @@ function saveItem(coll,id,mutate,tries){
     next.rev=((x.cur&&x.cur.rev)||0)+1;next.updatedAt=Date.now();
     return fetch(url,{method:'PUT',cache:'no-store',headers:{'if-match':x.etag,'Content-Type':'application/json'},body:JSON.stringify(next)}).then(function(r){
       if(r.status===412&&tries<2)return saveItem(coll,id,mutate,tries+1);
-      if(!r.ok)throw new Error('HTTP '+r.status);({docs:docs,tasks:tasks,cards:cards,suggestions:suggestions})[coll][id]=next;
+      if(!r.ok)throw new Error('HTTP '+r.status);({docs:docs,tasks:tasks,cards:cards,suggestions:suggestions,ttn:ttn})[coll][id]=next;
       var nl=(next.log||[]).slice(-1)[0],ol=x.cur&&(x.cur.log||[]).slice(-1)[0];
       if(nl&&(!ol||nl.at!==ol.at||nl.what!==ol.what))logActivity(coll,id,next,nl);
       return next;
@@ -292,6 +296,7 @@ function itemLabel(coll,x){
   if(coll==='tasks')return x.title||'a task';
   if(coll==='docs')return(x.company||'')+' '+(x.type||'doc').toLowerCase();
   if(coll==='suggestions')return x.title||'a suggestion';
+  if(coll==='ttn')return 'TTN: '+(x.contact||'')+(x.brand?' ('+x.brand+')':'');
   return(x.lead||'')+(x.company?' ('+x.company+')':'')+(x.subject?': '+x.subject:'');
 }
 function logActivity(coll,id,x,e){
@@ -592,6 +597,80 @@ function taskAct(id,a,art){
   }).then(function(r){setStatus(r===false?'That task was deleted.':a==='done'?'Done. It is under Done at the bottom.':'Reopened.',r===false);render()}).catch(function(err){setStatus('Not saved ('+err.message+'). Try again.',true)});
 }
 
+// TTN (The Travel Network) replies to Tom's Sales Navigator InMails (Evan, 11 Nov).
+// Kept apart from the Talex email cards: own collection /ttn, own tab, never in Leads
+// or the Waiting expiry. Nothing is sent from here.
+var TTNST={'new':'New reply','in progress':'In progress','waiting':'Waiting on them','done':'Done'};
+function ttnList(){return Object.keys(ttn).map(function(k){return ttn[k]}).filter(Boolean)}
+function ttnHtml(r){
+  var open=r.status!=='done';
+  var h='<article class="card ttnrow'+(open?'':' isdone')+'" data-ttn="'+esc(r.id)+'"><div class="top"><div class="lead"><span class="ttl">'+esc(r.contact||'Unnamed')+'</span>'+(r.brand?' <span class="co">· '+esc(r.brand)+'</span>':'')+'</div><div class="chips">'+ownerChip(r.owner)+'<span class="chip">'+esc(TTNST[r.status]||r.status||'')+'</span>';
+  if(open&&r.remind)h+=dueChip({status:'todo',due:r.remind});
+  h+='</div></div>';
+  if(r.title||r.linkedin)h+='<div class="sub" style="padding:0 16px 8px;margin:0">'+esc(r.title||'')+(r.linkedin?' <a href="'+esc(r.linkedin)+'" target="_blank" rel="noopener">LinkedIn ↗</a>':'')+'</div>';
+  if(editingTtn[r.id]){
+    var e=editingTtn[r.id];
+    var f=function(k,lab){return'<label>'+lab+'</label><input data-n="'+k+'" value="'+esc(e[k])+'">'};
+    h+='<div class="edit">';
+    if(e._new)h+='<div class="row"><div>'+f('contact','Contact')+'</div><div>'+f('brand','Brand')+'</div></div>'+f('title','Title')+f('linkedin','LinkedIn link');
+    h+='<div class="row"><div><label>Owner</label><select data-n="owner">'+['Tom','Evan'].map(function(o){return'<option'+(e.owner===o?' selected':'')+'>'+o+'</option>'}).join('')+'</select></div><div><label>Status</label><select data-n="status">'+Object.keys(TTNST).map(function(k){return'<option value="'+k+'"'+(e.status===k?' selected':'')+'>'+TTNST[k]+'</option>'}).join('')+'</select></div></div>';
+    h+='<div class="row"><div><label>First InMail</label><input type="date" data-n="firstInMail" value="'+esc(e.firstInMail)+'"></div><div><label>Reply date</label><input type="date" data-n="replyDate" value="'+esc(e.replyDate)+'"></div></div>';
+    h+='<label>Their reply (word for word)</label><textarea data-n="reply" style="min-height:70px">'+esc(e.reply)+'</textarea>';
+    h+=f('asked','What they asked for')+f('email','Email to use')+f('next','Next action');
+    h+='<label>Remind on (optional)</label><input type="date" data-n="remind" value="'+esc(e.remind)+'">';
+    h+='<label>Notes</label><textarea data-n="notes" style="min-height:70px">'+esc(e.notes)+'</textarea></div>';
+    h+='<div class="actions"><button class="btn primary" data-xa="save">Save</button><button class="btn" data-xa="cancel">Cancel</button></div>';
+  }else{
+    if(r.reply)h+='<div class="ttnq">'+linkify(r.reply)+'</div>';
+    if(r.asked)h+='<div class="ttnf"><b>Asked for:</b> '+linkify(r.asked)+'</div>';
+    if(r.email)h+='<div class="ttnf"><b>Email:</b> '+esc(r.email)+'</div>';
+    if(r.next)h+='<div class="ttnf"><b>Next:</b> '+linkify(r.next)+'</div>';
+    if(r.notes)h+='<div class="ttnf" style="color:var(--txt2)">'+linkify(r.notes)+'</div>';
+    var dl=[];if(r.firstInMail)dl.push('InMailed '+fmtDay(r.firstInMail));if(r.replyDate)dl.push('replied '+fmtDay(r.replyDate));
+    if(dl.length)h+='<div class="ttnf" style="color:var(--txt3);font-size:.8rem">'+esc(dl.join(' · '))+'</div>';
+    h+='<div class="actions">'+(open?'<button class="btn go" data-xa="done">Done</button>':'<button class="btn" data-xa="undo">Reopen</button>')+'<button class="btn" data-xa="edit">Edit</button></div>';
+  }
+  var last=(r.log||[]).slice(-1)[0];
+  if(last)h+='<div class="log">Last: '+esc(last.by)+' '+esc(last.what)+', '+esc(fmtWhen(last.at))+'</div>';
+  return h+'</article>';
+}
+function ttnView(){
+  var mine=ttnList().filter(function(r){return owner==='All'||r.owner===owner});
+  var byNew=function(a,b){return(b.replyDate||'').localeCompare(a.replyDate||'')||String(a.contact).localeCompare(String(b.contact))};
+  var h='<div class="note" style="padding:12px 0 0">The Travel Network: replies to Tom\'s InMails to luxury and travel brands. Separate from the Talex follow-ups. Nothing is sent from the board.</div>';
+  var any=false;
+  ['new','in progress','waiting'].forEach(function(s){var g=mine.filter(function(r){return(r.status||'new')===s}).sort(byNew);if(!g.length)return;any=true;h+='<div class="ttngroup">'+TTNST[s]+' ('+g.length+')</div>'+g.map(ttnHtml).join('')});
+  if(!any)h+='<div class="empty">'+(loadedOnce?'No open TTN replies.':'Loading…')+'</div>';
+  var done=mine.filter(function(r){return r.status==='done'}).sort(byNew);
+  if(done.length)h+='<details class="donelist"><summary>Done ('+done.length+')</summary>'+done.map(ttnHtml).join('')+'</details>';
+  return h;
+}
+function ttnAct(id,a,art){
+  var r=ttn[id];if(!r)return;
+  if(a==='edit'){editingTtn[id]=JSON.parse(JSON.stringify(r));return render()}
+  if(a==='cancel'){if(editingTtn[id]&&editingTtn[id]._new)delete ttn[id];delete editingTtn[id];blur();return render()}
+  if(a==='save'){
+    var e=Object.assign(editingTtn[id],collect(art,'data-n'));if(!String(e.contact||'').trim()){setStatus('Add the contact name first.',true);return}
+    var isNew=e._new;setStatus('Saving…');
+    saveItem('ttn',id,function(cur){
+      if(!isNew&&!cur)return false;
+      var next=cur||{id:id,log:[]};
+      ['contact','brand','title','linkedin','firstInMail','replyDate','reply','asked','email','next','owner','status','remind','notes'].forEach(function(k){if(e[k]!=null)next[k]=e[k]});
+      if(next.status==='done'&&!next.doneAt){next.doneAt=Date.now();next.doneBy=who()}
+      addLog(next,isNew?'added this TTN reply':'edited this TTN reply');return next;
+    }).then(function(x){delete editingTtn[id];blur();setStatus(x===false?'That row was deleted.':'Saved.',x===false);render()}).catch(function(err){setStatus('Not saved ('+err.message+'). Your text is still here; try again.',true)});
+    return;
+  }
+  if(!meSel.value&&!confirm('Pick who you are at the top first, so we can see who did what. Continue anyway?'))return;
+  setStatus('Saving…');
+  saveItem('ttn',id,function(cur){
+    if(!cur)return false;
+    if(a==='done'){cur.status='done';cur.doneAt=Date.now();cur.doneBy=who();addLog(cur,'marked it done')}
+    if(a==='undo'){cur.status='in progress';cur.doneAt=null;cur.doneBy=null;addLog(cur,'reopened it')}
+    return cur;
+  }).then(function(x){setStatus(x===false?'That row was deleted.':a==='done'?'Done. It is under Done at the bottom.':'Reopened.',x===false);render()}).catch(function(err){setStatus('Not saved ('+err.message+'). Try again.',true)});
+}
+
 // Suggestions come from the Granola check (10am, 1pm, 5pm, 8pm). Nothing reaches the
 // board until Tom or Evan taps Add; Dismiss keeps the suggestion on file.
 function suggList(){return Object.keys(suggestions).map(function(k){return suggestions[k]}).filter(Boolean)}
@@ -643,8 +722,9 @@ function render(){
   all.forEach(function(c){if((owner==='All'||c.owner===owner)&&counts[c.status]!=null)counts[c.status]++});
   docList().forEach(function(d){if(d.status!=='shared'&&(owner==='All'||d.owner===owner))counts.docs++});
   counts.leads=Object.keys(leads).length;
+  counts.ttn=ttnList().filter(function(r){return r.status!=='done'&&(owner==='All'||r.owner===owner)}).length;
   var h='<div class="bar"><div class="tabs" id="tabs">';
-  ['suggested','todo','waiting','tasks','docs','archive','leads'].forEach(function(s){if(s==='suggested'&&!counts.suggested&&view!=='suggested')return;h+='<button class="tab '+s+'" data-view="'+s+'" aria-pressed="'+(view===s)+'"><span class="ic">'+TABICON[s]+'</span><span class="t">'+TABS[s]+(counts[s]!=null?'<span class="n">'+counts[s]+'</span>':'')+'</span></button>'});
+  ['suggested','todo','waiting','tasks','docs','archive','leads','ttn'].forEach(function(s){if(s==='suggested'&&!counts.suggested&&view!=='suggested')return;h+='<button class="tab '+s+'" data-view="'+s+'" aria-pressed="'+(view===s)+'"><span class="ic">'+TABICON[s]+'</span><span class="t">'+TABS[s]+(counts[s]!=null?'<span class="n">'+counts[s]+'</span>':'')+'</span></button>'});
   h+='</div><div class="subbar"><span class="spacer"></span>';
   if(view!=='leads')['All','Tom','Evan'].forEach(function(o){h+='<button class="who" data-owner="'+o+'" aria-pressed="'+(owner===o)+'">'+o+'</button>'});
   h+='<button class="add" data-a="new">+ Add</button></div></div><div id="status"></div>';
@@ -652,6 +732,7 @@ function render(){
   else if(view==='archive')h+=archiveView();
   else if(view==='docs')h+=docsView();
   else if(view==='tasks')h+=tasksView();
+  else if(view==='ttn')h+=ttnView();
   else if(view==='suggested')h+=suggestedView();
   else{
     var shown=all.filter(function(c){return c.status===view&&(owner==='All'||c.owner===owner)});
@@ -679,6 +760,7 @@ app.addEventListener('click',function(ev){
   if(b.dataset.cf){convFilter=b.dataset.cf;return render()}
   if(b.dataset.owner){owner=b.dataset.owner;store('fu-owner',owner);return render()}
   if(b.dataset.da){var dart=b.closest('.doc');return docAct(dart.dataset.doc,b.dataset.da,dart)}
+  if(b.dataset.xa){var xart=b.closest('.ttnrow');return ttnAct(xart.dataset.ttn,b.dataset.xa,xart)}
   if(b.dataset.ta){var tart=b.closest('.task');return taskAct(tart.dataset.task,b.dataset.ta,tart)}
   if(b.dataset.sa){return suggAct(b.closest('.sugg').dataset.sugg,b.dataset.sa)}
   if(b.dataset.why){var tw=b.closest('.card').querySelector('[data-x="why"]');tw.value=(tw.value.trim()?tw.value.trim()+'. ':'')+b.dataset.why+': ';tw.focus();tw.setSelectionRange(tw.value.length,tw.value.length);return}
@@ -688,6 +770,12 @@ app.addEventListener('click',function(ev){
     tasks[tid]={id:tid,title:'',owner:meSel.value||'Evan',due:today(),notes:'',leadId:'',status:'open',log:[]};
     editingTask[tid]=JSON.parse(JSON.stringify(tasks[tid]));editingTask[tid]._new=true;render();
     var tf=app.querySelector('[data-task="'+tid+'"] [data-t="title"]');if(tf)tf.focus();return;
+  }
+  if(a==='new'&&view==='ttn'){
+    var xid='x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    ttn[xid]={id:xid,contact:'',brand:'',title:'',linkedin:'',firstInMail:'',replyDate:today(),reply:'',asked:'',email:'',next:'',owner:'Tom',status:'new',remind:'',notes:'',log:[]};
+    editingTtn[xid]=JSON.parse(JSON.stringify(ttn[xid]));editingTtn[xid]._new=true;render();
+    var xf=app.querySelector('[data-ttn="'+xid+'"] [data-n="contact"]');if(xf)xf.focus();return;
   }
   if(a==='new'&&view==='docs'){
     var did='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
