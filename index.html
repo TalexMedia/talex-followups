@@ -724,7 +724,7 @@ function render(){
   counts.leads=Object.keys(leads).length;
   counts.ttn=ttnList().filter(function(r){return r.status!=='done'&&(owner==='All'||r.owner===owner)}).length;
   var h='<div class="bar"><div class="tabs" id="tabs">';
-  ['suggested','todo','waiting','tasks','docs','archive','leads','ttn'].forEach(function(s){if(s==='suggested'&&!counts.suggested&&view!=='suggested')return;h+='<button class="tab '+s+'" data-view="'+s+'" aria-pressed="'+(view===s)+'"><span class="ic">'+TABICON[s]+'</span><span class="t">'+TABS[s]+(counts[s]!=null?'<span class="n">'+counts[s]+'</span>':'')+'</span></button>'});
+  ['suggested','todo','ttn','waiting','tasks','docs','archive','leads'].forEach(function(s){if(s==='suggested'&&!counts.suggested&&view!=='suggested')return;h+='<button class="tab '+s+'" data-view="'+s+'" aria-pressed="'+(view===s)+'"><span class="ic">'+TABICON[s]+'</span><span class="t">'+TABS[s]+(counts[s]!=null?'<span class="n">'+counts[s]+'</span>':'')+'</span></button>'});
   h+='</div><div class="subbar"><span class="spacer"></span>';
   if(view!=='leads')['All','Tom','Evan'].forEach(function(o){h+='<button class="who" data-owner="'+o+'" aria-pressed="'+(owner===o)+'">'+o+'</button>'});
   h+='<button class="add" data-a="new">+ Add</button></div></div><div id="status"></div>';
